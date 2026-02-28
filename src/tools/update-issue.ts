@@ -8,6 +8,9 @@ const schema = Type.Object({
   status: Type.Optional(Type.Union([Type.Literal("todo"), Type.Literal("in-progress"), Type.Literal("done")], { description: "New status" })),
   priority: Type.Optional(Type.Union([Type.Literal("low"), Type.Literal("medium"), Type.Literal("high")], { description: "New priority" })),
   body: Type.Optional(Type.String({ description: "New body" })),
+  parent: Type.Optional(Type.String({ description: "Parent issue ID (e.g. ISS-001)" })),
+  blocked_by: Type.Optional(Type.Array(Type.String(), { description: "Issue IDs that block this issue" })),
+  labels: Type.Optional(Type.Array(Type.String(), { description: "Labels (e.g. auth, backend)" })),
 });
 
 export function createUpdateIssueTool(cwd: string): AgentTool<typeof schema> {
@@ -25,6 +28,9 @@ export function createUpdateIssueTool(cwd: string): AgentTool<typeof schema> {
       if (params.status !== undefined) issue.status = params.status as Status;
       if (params.priority !== undefined) issue.priority = params.priority as Priority;
       if (params.body !== undefined) issue.body = params.body;
+      if (params.parent !== undefined) issue.parent = params.parent;
+      if (params.blocked_by !== undefined) issue.blocked_by = params.blocked_by;
+      if (params.labels !== undefined) issue.labels = params.labels;
       writeIssue(cwd, issue);
       return {
         content: [{ type: "text", text: `Updated ${params.id}: ${issue.title} [${issue.status}]` }],

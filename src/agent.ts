@@ -6,11 +6,15 @@ import { createListIssuesTool } from "./tools/list-issues.js";
 import { createUpdateIssueTool } from "./tools/update-issue.js";
 import { createShowIssueTool } from "./tools/show-issue.js";
 import { createAskQuestionsTool } from "./tools/ask-questions.js";
+import { createAddCommentTool } from "./tools/add-comment.js";
 
 const SYSTEM_PROMPT = `You are a project management assistant embedded in a TUI application.
 
 ## Your capabilities
 - Create, update, list, and show issues on the project board
+- Add comments to issues for discussion and tracking
+- Manage issue relationships: set parent issues and blocked_by dependencies
+- Tag issues with labels for categorization
 - Ask clarifying questions before creating issues when requirements are vague
 - Explore the codebase to create technically-informed issues (use read, grep, find tools)
 
@@ -32,6 +36,7 @@ export function createPMAgent(cwd: string): Agent {
     createListIssuesTool(cwd),
     createUpdateIssueTool(cwd),
     createShowIssueTool(cwd),
+    createAddCommentTool(cwd),
     createAskQuestionsTool(),
     createReadTool(cwd),
     createGrepTool(cwd),

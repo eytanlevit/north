@@ -76,12 +76,18 @@ export class KanbanPane implements Component {
 function renderIssueRow(issue: Issue, width: number): string {
   const priorityChar = issue.priority[0].toUpperCase();
   const colorFn = PRIORITY_COLOR[issue.priority] ?? chalk.dim;
+  const blocked = issue.blocked_by?.length ? chalk.red(" \u2298") : "";
+  const labelTags = issue.labels?.length
+    ? " " + issue.labels.map((l) => chalk.bgBlue.white(` ${l} `)).join(" ")
+    : "";
+  const suffix = blocked + labelTags;
+  const suffixVw = visibleWidth(suffix);
   const prefix = `   ${colorFn(`[${priorityChar}]`)} ${chalk.dim(issue.id)} `;
   const prefixVw = visibleWidth(prefix);
-  const remaining = width - prefixVw;
-  if (remaining <= 0) return truncateToWidth(prefix, width, "", true);
-  const title = truncateToWidth(issue.title, remaining, "…", true);
-  return prefix + title;
+  const remaining = width - prefixVw - suffixVw;
+  if (remaining <= 0) return truncateToWidth(prefix + suffix, width, "", true);
+  const title = truncateToWidth(issue.title, remaining, "\u2026", true);
+  return prefix + title + suffix;
 }
 
 function pad(line: string, width: number): string {

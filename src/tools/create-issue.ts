@@ -7,6 +7,9 @@ const schema = Type.Object({
   status: Type.Optional(Type.Union([Type.Literal("todo"), Type.Literal("in-progress"), Type.Literal("done")], { description: "Status (default: todo)" })),
   priority: Type.Optional(Type.Union([Type.Literal("low"), Type.Literal("medium"), Type.Literal("high")], { description: "Priority (default: medium)" })),
   body: Type.Optional(Type.String({ description: "Issue body in markdown" })),
+  parent: Type.Optional(Type.String({ description: "Parent issue ID (e.g. ISS-001)" })),
+  blocked_by: Type.Optional(Type.Array(Type.String(), { description: "Issue IDs that block this issue" })),
+  labels: Type.Optional(Type.Array(Type.String(), { description: "Labels (e.g. auth, backend)" })),
 });
 
 export function createCreateIssueTool(cwd: string): AgentTool<typeof schema> {
@@ -24,6 +27,9 @@ export function createCreateIssueTool(cwd: string): AgentTool<typeof schema> {
         priority: (params.priority ?? "medium") as Priority,
         createdAt: new Date().toISOString(),
         body: params.body ?? "",
+        parent: params.parent,
+        blocked_by: params.blocked_by,
+        labels: params.labels,
       };
       writeIssue(cwd, issue);
       return {
