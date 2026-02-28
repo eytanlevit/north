@@ -277,12 +277,23 @@ A Claude Code skill (installed at `~/.claude/skills/north.md` or bundled) that p
   - `internal/render` — table, detail, JSON, context markdown formatting
   - root `e2e_test.go` — full workflow, exit codes, JSON error output via built binary
 
-### M2: TUI
-- Bubble Tea-based terminal UI
-- Kanban board view (3 columns: Todo, In Progress, Done)
-- Issue detail view
-- Keyboard navigation
-- fsnotify file watcher for auto-refresh when `.north/` changes
+### M2: TUI ✅ COMPLETE
+- `north tui` command — interactive Bubble Tea kanban board
+- 3-column board driven by `config.Statuses` (not hardcoded)
+- `h/l` keyboard navigation between columns, `j/k` within columns
+- `Enter` to open detail view with scrollable viewport (bubbles/viewport), `Esc`/`b` to return
+- Priority color indicators, adaptive dark/light terminal styles (lipgloss AdaptiveColor)
+- fsnotify file watcher with 100ms debounce — auto-refreshes when issues change externally
+- Help toggle with `?`
+- Edge cases: empty columns, no statuses, cursor restoration by issue ID after reload, narrow terminal graceful degradation
+- Fixed `ValidateIssue` returning `ErrInvalidID` for empty title (now `ErrEmptyTitle`)
+- 116 tests across 6 packages (28 new):
+  - `internal/model` — frontmatter parse/serialize roundtrip, validation, special characters
+  - `internal/store` — project root discovery, file locking, atomic writes, NextID
+  - `internal/cmd` — all commands with happy path + error cases
+  - `internal/render` — table, detail, JSON, context markdown formatting
+  - `internal/tui` — board model, navigation, column layout, detail view, file watcher
+  - root `e2e_test.go` — full workflow, exit codes, JSON error output via built binary
 
 ### M3: Session Integration
 - `north session` — launches tmux/Zellij layout (Claude Code + TUI)
