@@ -251,7 +251,7 @@ A Claude Code skill (installed at `~/.claude/skills/north.md` or bundled) that p
 
 ## Milestones
 
-### M1: Core CLI
+### M1: Core CLI ✅ COMPLETE
 - `north init` — scaffold `.north/` directory with CLAUDE.md template
 - Flat commands: `north create/list/show/update/comment/edit`
 - `north context` — deterministic full-context dump for an issue
@@ -260,6 +260,12 @@ A Claude Code skill (installed at `~/.claude/skills/north.md` or bundled) that p
 - `format_version: 1` in issue frontmatter
 - Idempotent mutations, no TTY prompts when non-interactive
 - Config file for project settings
+- Comments stored as structured YAML array in frontmatter (not markdown headers)
+- ID generation derived from filesystem scan (not config.yaml next_id)
+- File locking via gofrs/flock for concurrent access safety
+- Exit codes: 0=success, 1=generic, 2=validation, 3=not found, 4=conflict
+- 64 tests across model, store, and cmd packages
+- Golden tests for `north context` deterministic output
 
 ### M2: TUI
 - Bubble Tea-based terminal UI
