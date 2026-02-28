@@ -81,6 +81,25 @@ func TestListCmd_JSONEmpty(t *testing.T) {
 	assert.Len(t, result, 0)
 }
 
+func TestListCmd_MalformedIssueFile(t *testing.T) {
+	dir := setupProject(t)
+	chdir(t, dir)
+	writeIssue(t, dir, "NOR-1", "Good issue", "todo", "medium")
+
+	// Write a malformed issue file
+	require.NoError(t, os.WriteFile(
+		filepath.Join(dir, ".north", "issues", "NOR-2.md"),
+		[]byte("this is not valid frontmatter"),
+		0644,
+	))
+
+	cmd := NewListCmd()
+	cmd.SetArgs([]string{})
+	err := cmd.Execute()
+	// ListIssues currently fails on malformed files — this test documents that behavior
+	assert.Error(t, err, "list should fail when an issue file is malformed")
+}
+
 func TestListCmd_StatusFilter(t *testing.T) {
 	dir := setupProject(t)
 	chdir(t, dir)
