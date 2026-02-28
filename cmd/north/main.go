@@ -27,6 +27,7 @@ func main() {
 		cmd.NewCommentCmd(),
 		cmd.NewEditCmd(),
 		cmd.NewContextCmd(),
+		cmd.NewTUICmd(),
 	)
 
 	if err := root.Execute(); err != nil {
