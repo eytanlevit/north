@@ -78,7 +78,7 @@ export async function createPMSession(cwd: string): Promise<AgentSession> {
     tools: [readTool, grepTool, findTool],
     customTools: [...pmTools, safeBash] as unknown as ToolDefinition[],
     resourceLoader,
-    sessionManager: SessionManager.inMemory(cwd),
+    sessionManager: SessionManager.create(cwd),
   });
 
   return session;
