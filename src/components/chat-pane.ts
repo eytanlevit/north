@@ -144,7 +144,9 @@ export class ChatPane implements Component, Focusable {
 
     let visibleMessages: string[];
     if (messageLines.length <= availableForMessages) {
-      visibleMessages = messageLines;
+      // Pad so editor sticks to the bottom
+      const pad = new Array(availableForMessages - messageLines.length).fill("");
+      visibleMessages = [...messageLines, ...pad];
       this.scrollOffset = 0;
     } else if (this.scrollLocked) {
       // Auto-scroll to bottom
