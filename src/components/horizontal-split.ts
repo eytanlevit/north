@@ -22,6 +22,18 @@ export class HorizontalSplit implements Component {
     this.right.invalidate();
   }
 
+  handleInput(data: string): void {
+    // Route input to whichever child has focus
+    const leftFocused = "focused" in this.left && (this.left as Component & { focused: boolean }).focused;
+    const rightFocused = "focused" in this.right && (this.right as Component & { focused: boolean }).focused;
+
+    if (leftFocused && this.left.handleInput) {
+      this.left.handleInput(data);
+    } else if (rightFocused && this.right.handleInput) {
+      this.right.handleInput(data);
+    }
+  }
+
   render(width: number): string[] {
     const terminalHeight = process.stdout.rows || 24;
 

@@ -1,5 +1,5 @@
 import type { Component, Focusable, MarkdownTheme } from "@mariozechner/pi-tui";
-import { Container, Editor, Markdown, Text, Spacer, visibleWidth, truncateToWidth } from "@mariozechner/pi-tui";
+import { Container, Editor, Markdown, Text, Spacer, visibleWidth, truncateToWidth, matchesKey } from "@mariozechner/pi-tui";
 import type { TUI, EditorTheme } from "@mariozechner/pi-tui";
 import chalk from "chalk";
 
@@ -41,6 +41,8 @@ export class ChatPane implements Component, Focusable {
   private statusText: Text;
   private _editor: Editor;
   private streamingMarkdown: Markdown | null = null;
+  private scrollOffset = 0;
+  private scrollLocked = true; // true = auto-scroll to bottom
 
   constructor(tui: TUI) {
     this.tui = tui;
@@ -75,6 +77,8 @@ export class ChatPane implements Component, Focusable {
       new Text(chalk.bold.green("You: ") + text, 1, 0)
     );
     this.messagesContainer.addChild(new Spacer(1));
+    this.scrollLocked = true;
+    this.scrollOffset = 0;
     this.tui.requestRender();
   }
 
@@ -85,6 +89,8 @@ export class ChatPane implements Component, Focusable {
       })
     );
     this.messagesContainer.addChild(new Spacer(1));
+    this.scrollLocked = true;
+    this.scrollOffset = 0;
     this.tui.requestRender();
   }
 
@@ -97,6 +103,8 @@ export class ChatPane implements Component, Focusable {
     } else {
       this.streamingMarkdown.setText(text);
     }
+    this.scrollLocked = true;
+    this.scrollOffset = 0;
     this.tui.requestRender();
   }
 
@@ -134,16 +142,47 @@ export class ChatPane implements Component, Focusable {
     // Render all messages
     const messageLines = this.messagesContainer.render(width);
 
-    // If messages fit, use them all; otherwise take the bottom N lines (most recent)
-    const visibleMessages =
-      messageLines.length <= availableForMessages
-        ? messageLines
-        : messageLines.slice(messageLines.length - availableForMessages);
+    let visibleMessages: string[];
+    if (messageLines.length <= availableForMessages) {
+      visibleMessages = messageLines;
+      this.scrollOffset = 0;
+    } else if (this.scrollLocked) {
+      // Auto-scroll to bottom
+      this.scrollOffset = 0;
+      visibleMessages = messageLines.slice(messageLines.length - availableForMessages);
+    } else {
+      // Manual scroll position: scrollOffset is lines from the bottom
+      const maxOffset = messageLines.length - availableForMessages;
+      this.scrollOffset = Math.min(this.scrollOffset, maxOffset);
+      const endIndex = messageLines.length - this.scrollOffset;
+      const startIndex = endIndex - availableForMessages;
+      visibleMessages = messageLines.slice(startIndex, endIndex);
+    }
 
     return [...visibleMessages, ...statusLines, ...editorLines];
   }
 
   handleInput(data: string): void {
+    // Scroll history with PageUp/PageDown or Shift+Up/Shift+Down
+    if (matchesKey(data, "pageUp") || matchesKey(data, "shift+up")) {
+      this.scrollLocked = false;
+      this.scrollOffset += 5;
+      this.tui.requestRender();
+      return;
+    }
+    if (matchesKey(data, "pageDown") || matchesKey(data, "shift+down")) {
+      if (this.scrollOffset > 0) {
+        this.scrollOffset -= 5;
+        if (this.scrollOffset <= 0) {
+          this.scrollOffset = 0;
+          this.scrollLocked = true;
+        }
+      }
+      this.tui.requestRender();
+      return;
+    }
+
+    // All other input goes to the editor
     this._editor.handleInput(data);
   }
 }
