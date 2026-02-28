@@ -9,4 +9,5 @@ var (
 	ErrInvalidStatus   = errors.New("invalid status")
 	ErrInvalidPriority = errors.New("invalid priority")
 	ErrInvalidID       = errors.New("invalid issue ID format")
+	ErrEmptyTitle      = errors.New("title must not be empty")
 )

@@ -107,7 +107,7 @@ func SerializeIssue(issue *Issue) ([]byte, error) {
 // ValidateIssue checks that an issue's fields are valid against the config.
 func ValidateIssue(issue *Issue, cfg *Config) error {
 	if issue.Meta.Title == "" {
-		return fmt.Errorf("%w: title must not be empty", ErrInvalidID)
+		return ErrEmptyTitle
 	}
 
 	if !idPattern.MatchString(issue.Meta.ID) {
