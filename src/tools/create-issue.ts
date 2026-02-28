@@ -7,6 +7,7 @@ const schema = Type.Object({
   status: Type.Optional(Type.Union([Type.Literal("todo"), Type.Literal("in-progress"), Type.Literal("done")], { description: "Status (default: todo)" })),
   priority: Type.Optional(Type.Union([Type.Literal("low"), Type.Literal("medium"), Type.Literal("high")], { description: "Priority (default: medium)" })),
   body: Type.Optional(Type.String({ description: "Issue body in markdown" })),
+  docs: Type.Optional(Type.Array(Type.String(), { description: "Paths to linked docs relative to .pm/ (e.g. docs/prd.md)" })),
 });
 
 export function createCreateIssueTool(cwd: string): AgentTool<typeof schema> {
@@ -24,6 +25,7 @@ export function createCreateIssueTool(cwd: string): AgentTool<typeof schema> {
         priority: (params.priority ?? "medium") as Priority,
         createdAt: new Date().toISOString(),
         body: params.body ?? "",
+        ...(params.docs ? { docs: params.docs } : {}),
       };
       writeIssue(cwd, issue);
       return {

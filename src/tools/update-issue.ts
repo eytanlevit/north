@@ -8,6 +8,7 @@ const schema = Type.Object({
   status: Type.Optional(Type.Union([Type.Literal("todo"), Type.Literal("in-progress"), Type.Literal("done")], { description: "New status" })),
   priority: Type.Optional(Type.Union([Type.Literal("low"), Type.Literal("medium"), Type.Literal("high")], { description: "New priority" })),
   body: Type.Optional(Type.String({ description: "New body" })),
+  docs: Type.Optional(Type.Array(Type.String(), { description: "Paths to linked docs relative to .pm/ (e.g. docs/prd.md)" })),
 });
 
 export function createUpdateIssueTool(cwd: string): AgentTool<typeof schema> {
@@ -25,6 +26,7 @@ export function createUpdateIssueTool(cwd: string): AgentTool<typeof schema> {
       if (params.status !== undefined) issue.status = params.status as Status;
       if (params.priority !== undefined) issue.priority = params.priority as Priority;
       if (params.body !== undefined) issue.body = params.body;
+      if (params.docs !== undefined) issue.docs = params.docs;
       writeIssue(cwd, issue);
       return {
         content: [{ type: "text", text: `Updated ${params.id}: ${issue.title} [${issue.status}]` }],

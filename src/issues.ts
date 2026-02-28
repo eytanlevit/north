@@ -12,6 +12,16 @@ export interface Issue {
   priority: Priority;
   createdAt: string;
   body: string;
+  docs?: string[];
+  blocked_by?: string[];
+  parent?: string;
+  comments?: Comment[];
+}
+
+export interface Comment {
+  author: string;
+  date: string;
+  text: string;
 }
 
 type ChangeCallback = () => void;
