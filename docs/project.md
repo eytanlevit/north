@@ -33,7 +33,7 @@ A `docs/` folder holds any attached files — PRDs, specs, API schemas, images, 
 
 The agent runs as a `claude --output-format stream-json` subprocess. North parses the JSON-lines stream and renders messages, tool calls, and results in the chat pane. The kanban board watches `.north/` via fsnotify and updates live as the agent creates/updates issues.
 
-A simpler `north session --tmux` flag is available as a fallback, launching a tmux split with Claude Code and TUI as independent processes.
+
 
 ## Architecture
 
@@ -157,7 +157,7 @@ north update NOR-1 --status done    # Update issue fields
 north comment NOR-1 "message"       # Add a comment
 north edit NOR-1                    # Open issue in $EDITOR
 north context NOR-1 [--json]       # Output everything an agent needs
-north session [issue-id]             # Launch integrated agent TUI (--tmux for split layout)
+north session [issue-id]             # Launch integrated agent TUI
 ```
 
 ### Context Command (Key for Agents)
@@ -311,7 +311,6 @@ A Claude Code skill (installed at `~/.claude/skills/north.md` or bundled) that p
 - Kanban board: existing fsnotify watcher, auto-refreshes as agent modifies issues
 - Tab to switch focus between chat and board panes
 - `north session NOR-1` pre-loads issue context into agent prompt
-- `north session --tmux` flag as fallback for the tmux split approach
 - CLAUDE.md auto-generation so the agent knows about `north` CLI commands
 
 ### M4: Skills & Hooks
