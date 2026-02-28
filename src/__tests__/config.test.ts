@@ -121,6 +121,7 @@ describe("initProject", () => {
     expect(fs.existsSync(path.join(tmpDir, ".pm"))).toBe(true);
     expect(fs.existsSync(path.join(tmpDir, ".pm", "issues"))).toBe(true);
     expect(fs.existsSync(path.join(tmpDir, ".pm", "docs"))).toBe(true);
+    expect(fs.existsSync(path.join(tmpDir, ".pm", "logs"))).toBe(true);
     expect(fs.existsSync(path.join(tmpDir, ".pm", "config.yaml"))).toBe(true);
     expect(fs.existsSync(path.join(tmpDir, ".pm", "project.md"))).toBe(true);
   });
