@@ -200,6 +200,17 @@ func TestContextCmd_Minimal(t *testing.T) {
 	assert.NotContains(t, out, "# Documents")
 }
 
+func TestContextCmd_NotFound(t *testing.T) {
+	dir := setupProject(t)
+	chdir(t, dir)
+
+	cmd := NewContextCmd()
+	cmd.SetArgs([]string{"NOR-999"})
+	err := cmd.Execute()
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, model.ErrIssueNotFound)
+}
+
 // findProjectRoot finds the project root for golden file paths.
 func findProjectRoot(t *testing.T) string {
 	t.Helper()

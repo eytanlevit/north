@@ -11,6 +11,11 @@ import (
 	"golang.org/x/term"
 )
 
+// isTerminal checks if stdin is a terminal. Package-level var for testing.
+var isTerminal = func() bool {
+	return term.IsTerminal(int(os.Stdin.Fd()))
+}
+
 func NewEditCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "edit <issue-id>",
@@ -26,10 +31,6 @@ func runEdit(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("$EDITOR is not set")
 	}
 
-	if !term.IsTerminal(int(os.Stdin.Fd())) {
-		return fmt.Errorf("stdin is not a terminal")
-	}
-
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -43,6 +44,11 @@ func runEdit(cmd *cobra.Command, args []string) error {
 	issue, err := s.LoadIssue(args[0])
 	if err != nil {
 		return err
+	}
+
+	// Check TTY after validating issue exists
+	if !isTerminal() {
+		return fmt.Errorf("stdin is not a terminal")
 	}
 
 	// Write issue to temp file
