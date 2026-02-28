@@ -12,9 +12,10 @@ import (
 
 func main() {
 	root := &cobra.Command{
-		Use:          "north",
-		Short:        "Filesystem-based project management for devs and AI agents",
-		SilenceUsage: true,
+		Use:           "north",
+		Short:         "Filesystem-based project management for devs and AI agents",
+		SilenceUsage:  true,
+		SilenceErrors: true,
 	}
 
 	root.AddCommand(
@@ -39,9 +40,18 @@ func main() {
 			exitCode = 4
 		}
 
-		// If any command had --json, output JSON error
-		if jsonFlag, _ := root.Flags().GetBool("json"); jsonFlag {
+		// Check if the executed subcommand had --json flag set
+		jsonFlag := false
+		if sub, _, subErr := root.Find(os.Args[1:]); subErr == nil && sub != root {
+			if f := sub.Flags().Lookup("json"); f != nil {
+				jsonFlag = f.Value.String() == "true"
+			}
+		}
+
+		if jsonFlag {
 			render.JSONError(os.Stderr, err, exitCode)
+		} else {
+			render.TextError(os.Stderr, err)
 		}
 
 		os.Exit(exitCode)

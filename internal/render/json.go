@@ -23,3 +23,8 @@ func JSONError(w io.Writer, err error, exitCode int) {
 	data, _ := json.MarshalIndent(out, "", "  ")
 	fmt.Fprintln(w, string(data))
 }
+
+// TextError writes a plain-text error message to w.
+func TextError(w io.Writer, err error) {
+	fmt.Fprintf(w, "Error: %s\n", err)
+}
