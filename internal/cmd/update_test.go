@@ -14,7 +14,7 @@ import (
 
 func TestUpdateCmd_Status(t *testing.T) {
 	dir := setupProject(t)
-	require.NoError(t, os.Chdir(dir))
+	chdir(t, dir)
 	writeIssue(t, dir, "NOR-1", "Test", "todo", "medium")
 
 	var buf bytes.Buffer
@@ -31,7 +31,7 @@ func TestUpdateCmd_Status(t *testing.T) {
 
 func TestUpdateCmd_PreservesBody(t *testing.T) {
 	dir := setupProject(t)
-	require.NoError(t, os.Chdir(dir))
+	chdir(t, dir)
 
 	// Write issue with body
 	issue := &model.Issue{
@@ -64,7 +64,7 @@ func TestUpdateCmd_PreservesBody(t *testing.T) {
 
 func TestUpdateCmd_InvalidStatus(t *testing.T) {
 	dir := setupProject(t)
-	require.NoError(t, os.Chdir(dir))
+	chdir(t, dir)
 	writeIssue(t, dir, "NOR-1", "Test", "todo", "medium")
 
 	cmd := NewUpdateCmd()
@@ -75,7 +75,7 @@ func TestUpdateCmd_InvalidStatus(t *testing.T) {
 
 func TestUpdateCmd_MultipleFields(t *testing.T) {
 	dir := setupProject(t)
-	require.NoError(t, os.Chdir(dir))
+	chdir(t, dir)
 	writeIssue(t, dir, "NOR-1", "Old title", "todo", "medium")
 
 	cmd := NewUpdateCmd()
@@ -93,7 +93,7 @@ func TestUpdateCmd_MultipleFields(t *testing.T) {
 
 func TestUpdateCmd_NotFound(t *testing.T) {
 	dir := setupProject(t)
-	require.NoError(t, os.Chdir(dir))
+	chdir(t, dir)
 
 	cmd := NewUpdateCmd()
 	cmd.SetArgs([]string{"NOR-999", "--status", "done"})
@@ -103,7 +103,7 @@ func TestUpdateCmd_NotFound(t *testing.T) {
 
 func TestUpdateCmd_NoFlags(t *testing.T) {
 	dir := setupProject(t)
-	require.NoError(t, os.Chdir(dir))
+	chdir(t, dir)
 	writeIssue(t, dir, "NOR-1", "Test", "todo", "medium")
 
 	cmd := NewUpdateCmd()

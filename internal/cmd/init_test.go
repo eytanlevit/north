@@ -12,7 +12,7 @@ import (
 
 func TestInitCmd_CreatesProject(t *testing.T) {
 	dir := t.TempDir()
-	require.NoError(t, os.Chdir(dir))
+	chdir(t, dir)
 
 	cmd := NewInitCmd()
 	cmd.SetArgs([]string{})
@@ -36,7 +36,7 @@ func TestInitCmd_CreatesProject(t *testing.T) {
 
 func TestInitCmd_FailsIfExists(t *testing.T) {
 	dir := t.TempDir()
-	require.NoError(t, os.Chdir(dir))
+	chdir(t, dir)
 	require.NoError(t, os.MkdirAll(filepath.Join(dir, ".north"), 0755))
 
 	cmd := NewInitCmd()

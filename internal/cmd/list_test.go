@@ -32,7 +32,7 @@ func writeIssue(t *testing.T, dir string, id, title, status, priority string) {
 
 func TestListCmd_Table(t *testing.T) {
 	dir := setupProject(t)
-	require.NoError(t, os.Chdir(dir))
+	chdir(t, dir)
 	writeIssue(t, dir, "NOR-1", "First", "todo", "high")
 	writeIssue(t, dir, "NOR-2", "Second", "done", "low")
 
@@ -51,7 +51,7 @@ func TestListCmd_Table(t *testing.T) {
 
 func TestListCmd_JSON(t *testing.T) {
 	dir := setupProject(t)
-	require.NoError(t, os.Chdir(dir))
+	chdir(t, dir)
 	writeIssue(t, dir, "NOR-1", "First", "todo", "high")
 
 	var buf bytes.Buffer
@@ -67,7 +67,7 @@ func TestListCmd_JSON(t *testing.T) {
 
 func TestListCmd_JSONEmpty(t *testing.T) {
 	dir := setupProject(t)
-	require.NoError(t, os.Chdir(dir))
+	chdir(t, dir)
 
 	var buf bytes.Buffer
 	cmd := NewListCmd()
@@ -83,7 +83,7 @@ func TestListCmd_JSONEmpty(t *testing.T) {
 
 func TestListCmd_StatusFilter(t *testing.T) {
 	dir := setupProject(t)
-	require.NoError(t, os.Chdir(dir))
+	chdir(t, dir)
 	writeIssue(t, dir, "NOR-1", "Todo item", "todo", "medium")
 	writeIssue(t, dir, "NOR-2", "Done item", "done", "medium")
 

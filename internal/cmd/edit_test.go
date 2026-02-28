@@ -1,16 +1,14 @@
 package cmd
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestEditCmd_NoEditor(t *testing.T) {
 	dir := setupProject(t)
-	require.NoError(t, os.Chdir(dir))
+	chdir(t, dir)
 	writeIssue(t, dir, "NOR-1", "Test", "todo", "medium")
 
 	t.Setenv("EDITOR", "")

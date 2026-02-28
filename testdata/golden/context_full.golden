@@ -1,0 +1,27 @@
+# Project: test
+
+# Issue: NOR-3 — Implement user authentication
+Status: in-progress | Priority: high | Labels: auth, backend
+
+## Description
+
+Implement JWT-based authentication for the API.
+
+## Comments (2)
+[2026-02-28 claude-code] Started work on this.
+[2026-02-28 eytan] Use RS256 instead of HS256.
+
+# Blocking Issues
+## NOR-2 — Set up database schema
+Status: in-progress | Priority: high
+
+# Related Issues (parent)
+## NOR-1 — Core infrastructure
+Status: in-progress | Priority: high
+
+# Documents
+## docs/prd.md
+# PRD
+
+Product requirements document.
+

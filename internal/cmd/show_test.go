@@ -3,7 +3,6 @@ package cmd
 import (
 	"bytes"
 	"encoding/json"
-	"os"
 	"testing"
 
 	"github.com/eytanlevit/north/internal/model"
@@ -13,7 +12,7 @@ import (
 
 func TestShowCmd_Detail(t *testing.T) {
 	dir := setupProject(t)
-	require.NoError(t, os.Chdir(dir))
+	chdir(t, dir)
 	writeIssue(t, dir, "NOR-1", "My Issue", "todo", "high")
 
 	var buf bytes.Buffer
@@ -31,7 +30,7 @@ func TestShowCmd_Detail(t *testing.T) {
 
 func TestShowCmd_JSON(t *testing.T) {
 	dir := setupProject(t)
-	require.NoError(t, os.Chdir(dir))
+	chdir(t, dir)
 	writeIssue(t, dir, "NOR-1", "JSON Issue", "todo", "medium")
 
 	var buf bytes.Buffer
@@ -48,7 +47,7 @@ func TestShowCmd_JSON(t *testing.T) {
 
 func TestShowCmd_NotFound(t *testing.T) {
 	dir := setupProject(t)
-	require.NoError(t, os.Chdir(dir))
+	chdir(t, dir)
 
 	cmd := NewShowCmd()
 	cmd.SetArgs([]string{"NOR-999"})

@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"bytes"
-	"os"
 	"testing"
 
 	"github.com/eytanlevit/north/internal/model"
@@ -13,7 +12,7 @@ import (
 
 func TestCommentCmd_Basic(t *testing.T) {
 	dir := setupProject(t)
-	require.NoError(t, os.Chdir(dir))
+	chdir(t, dir)
 	writeIssue(t, dir, "NOR-1", "Test", "todo", "medium")
 
 	var buf bytes.Buffer
@@ -32,7 +31,7 @@ func TestCommentCmd_Basic(t *testing.T) {
 
 func TestCommentCmd_MultipleComments(t *testing.T) {
 	dir := setupProject(t)
-	require.NoError(t, os.Chdir(dir))
+	chdir(t, dir)
 	writeIssue(t, dir, "NOR-1", "Test", "todo", "medium")
 
 	for i, msg := range []string{"First", "Second", "Third"} {
@@ -52,7 +51,7 @@ func TestCommentCmd_MultipleComments(t *testing.T) {
 
 func TestCommentCmd_AuthorFromEnv(t *testing.T) {
 	dir := setupProject(t)
-	require.NoError(t, os.Chdir(dir))
+	chdir(t, dir)
 	writeIssue(t, dir, "NOR-1", "Test", "todo", "medium")
 
 	t.Setenv("NORTH_AUTHOR", "env-author")
@@ -70,7 +69,7 @@ func TestCommentCmd_AuthorFromEnv(t *testing.T) {
 
 func TestCommentCmd_NotFound(t *testing.T) {
 	dir := setupProject(t)
-	require.NoError(t, os.Chdir(dir))
+	chdir(t, dir)
 
 	cmd := NewCommentCmd()
 	cmd.SetArgs([]string{"NOR-999", "msg"})
@@ -80,7 +79,7 @@ func TestCommentCmd_NotFound(t *testing.T) {
 
 func TestCommentCmd_NoMessage(t *testing.T) {
 	dir := setupProject(t)
-	require.NoError(t, os.Chdir(dir))
+	chdir(t, dir)
 	writeIssue(t, dir, "NOR-1", "Test", "todo", "medium")
 
 	cmd := NewCommentCmd()

@@ -13,6 +13,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// chdir changes to dir and restores original cwd on cleanup.
+func chdir(t *testing.T, dir string) {
+	t.Helper()
+	orig, err := os.Getwd()
+	require.NoError(t, err)
+	require.NoError(t, os.Chdir(dir))
+	t.Cleanup(func() { os.Chdir(orig) })
+}
+
 func setupProject(t *testing.T) string {
 	t.Helper()
 	dir := t.TempDir()
@@ -29,7 +38,7 @@ func setupProject(t *testing.T) string {
 
 func TestCreateCmd_BasicCreate(t *testing.T) {
 	dir := setupProject(t)
-	require.NoError(t, os.Chdir(dir))
+	chdir(t, dir)
 
 	var buf bytes.Buffer
 	cmd := NewCreateCmd()
@@ -51,7 +60,7 @@ func TestCreateCmd_BasicCreate(t *testing.T) {
 
 func TestCreateCmd_WithFlags(t *testing.T) {
 	dir := setupProject(t)
-	require.NoError(t, os.Chdir(dir))
+	chdir(t, dir)
 
 	var buf bytes.Buffer
 	cmd := NewCreateCmd()
@@ -69,7 +78,7 @@ func TestCreateCmd_WithFlags(t *testing.T) {
 
 func TestCreateCmd_SequentialIDs(t *testing.T) {
 	dir := setupProject(t)
-	require.NoError(t, os.Chdir(dir))
+	chdir(t, dir)
 
 	for i := 0; i < 3; i++ {
 		var buf bytes.Buffer
@@ -90,7 +99,7 @@ func TestCreateCmd_SequentialIDs(t *testing.T) {
 
 func TestCreateCmd_InvalidPriority(t *testing.T) {
 	dir := setupProject(t)
-	require.NoError(t, os.Chdir(dir))
+	chdir(t, dir)
 
 	cmd := NewCreateCmd()
 	cmd.SetArgs([]string{"Bad priority", "--priority", "urgent"})
