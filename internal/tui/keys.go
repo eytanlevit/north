@@ -113,3 +113,25 @@ func (k DetailKeyMap) FullHelp() [][]key.Binding {
 		{k.Back, k.Help, k.Quit},
 	}
 }
+
+// SessionKeyMap defines key bindings for the session view.
+type SessionKeyMap struct {
+	Tab    key.Binding
+	Send   key.Binding
+	ForceQ key.Binding
+}
+
+var sessionKeys = SessionKeyMap{
+	Tab: key.NewBinding(
+		key.WithKeys("tab"),
+		key.WithHelp("tab", "switch pane"),
+	),
+	Send: key.NewBinding(
+		key.WithKeys("enter"),
+		key.WithHelp("enter", "send"),
+	),
+	ForceQ: key.NewBinding(
+		key.WithKeys("ctrl+c"),
+		key.WithHelp("ctrl+c", "quit"),
+	),
+}

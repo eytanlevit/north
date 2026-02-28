@@ -85,6 +85,26 @@ var emptyStyle = lipgloss.NewStyle().
 	Italic(true).
 	Padding(1, 2)
 
+// Chat pane styles.
+var (
+	chatUserStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.AdaptiveColor{Light: "#0077B6", Dark: "#00B4D8"}).
+		Bold(true)
+
+	chatToolStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.AdaptiveColor{Light: "#E65100", Dark: "#FF9800"})
+
+	chatResultStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.AdaptiveColor{Light: "#2E7D32", Dark: "#66BB6A"})
+
+	chatErrorStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.AdaptiveColor{Light: "#D32F2F", Dark: "#EF5350"})
+
+	sessionPaneStyle = lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(colorBorder)
+)
+
 // PriorityIndicator returns a colored symbol for the priority level.
 func PriorityIndicator(priority string) string {
 	switch priority {
