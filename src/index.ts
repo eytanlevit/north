@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { ProcessTerminal, TUI, matchesKey } from "@mariozechner/pi-tui";
 import { ChatPane } from "./components/chat-pane.js";
 import { KanbanPane } from "./components/kanban-pane.js";
