@@ -8,10 +8,10 @@ import (
 
 // Config represents the .north/config.yaml file.
 type Config struct {
-	Project    string   `yaml:"project"`
-	Prefix     string   `yaml:"prefix"`
-	Statuses   []string `yaml:"statuses"`
-	Priorities []string `yaml:"priorities"`
+	Project    string   `yaml:"project" json:"project"`
+	Prefix     string   `yaml:"prefix" json:"prefix"`
+	Statuses   []string `yaml:"statuses" json:"statuses"`
+	Priorities []string `yaml:"priorities" json:"priorities"`
 }
 
 // DefaultConfig returns a config with sensible defaults.
