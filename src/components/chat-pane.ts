@@ -122,7 +122,25 @@ export class ChatPane implements Component, Focusable {
   }
 
   render(width: number): string[] {
-    return this.container.render(width);
+    const terminalHeight = process.stdout.rows || 24;
+
+    // Render editor and status first to know their heights
+    const editorLines = this._editor.render(width);
+    const statusLines = this.statusText.render(width);
+
+    const reservedHeight = editorLines.length + statusLines.length;
+    const availableForMessages = Math.max(1, terminalHeight - reservedHeight);
+
+    // Render all messages
+    const messageLines = this.messagesContainer.render(width);
+
+    // If messages fit, use them all; otherwise take the bottom N lines (most recent)
+    const visibleMessages =
+      messageLines.length <= availableForMessages
+        ? messageLines
+        : messageLines.slice(messageLines.length - availableForMessages);
+
+    return [...visibleMessages, ...statusLines, ...editorLines];
   }
 
   handleInput(data: string): void {

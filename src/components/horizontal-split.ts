@@ -23,6 +23,8 @@ export class HorizontalSplit implements Component {
   }
 
   render(width: number): string[] {
+    const terminalHeight = process.stdout.rows || 24;
+
     // separator takes 1 col
     const leftWidth = Math.floor((width - 1) * this.leftRatio);
     const rightWidth = width - leftWidth - 1;
@@ -30,13 +32,16 @@ export class HorizontalSplit implements Component {
     const leftLines = this.left.render(leftWidth);
     const rightLines = this.right.render(rightWidth);
 
-    const maxLines = Math.max(leftLines.length, rightLines.length);
+    // Cap both panes to terminal height
+    const cappedLeft = capToHeight(leftLines, terminalHeight, leftWidth);
+    const cappedRight = capToHeight(rightLines, terminalHeight, rightWidth);
+
     const sep = chalk.dim("│");
     const result: string[] = [];
 
-    for (let i = 0; i < maxLines; i++) {
-      const l = padToWidth(leftLines[i] ?? "", leftWidth);
-      const r = padToWidth(rightLines[i] ?? "", rightWidth);
+    for (let i = 0; i < terminalHeight; i++) {
+      const l = padToWidth(cappedLeft[i] ?? "", leftWidth);
+      const r = padToWidth(cappedRight[i] ?? "", rightWidth);
       result.push(l + sep + r);
     }
 
@@ -44,6 +49,14 @@ export class HorizontalSplit implements Component {
     this.cachedWidth = width;
     return result;
   }
+}
+
+function capToHeight(lines: string[], height: number, _width: number): string[] {
+  if (lines.length <= height) {
+    return lines;
+  }
+  // Truncate to terminal height, keeping the top lines
+  return lines.slice(0, height);
 }
 
 function padToWidth(line: string, targetWidth: number): string {
