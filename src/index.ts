@@ -29,8 +29,26 @@ tui.requestRender();
 // Create session (resumes previous if available)
 const { session, resumed } = await createPMSession(cwd);
 
-// Show resume indicator
+// Replay previous messages into the chat pane on resume
 if (resumed) {
+  const context = session.sessionManager.buildSessionContext();
+  for (const msg of context.messages) {
+    if (msg.role === "user") {
+      const text = typeof msg.content === "string"
+        ? msg.content
+        : (msg.content as Array<{ type: string; text?: string }>)
+            .filter((c) => c.type === "text")
+            .map((c) => c.text ?? "")
+            .join("");
+      if (text) chatPane.addUserMessage(text);
+    } else if (msg.role === "assistant") {
+      const text = (msg.content as Array<{ type: string; text?: string }>)
+        .filter((c) => c.type === "text")
+        .map((c) => c.text ?? "")
+        .join("");
+      if (text) chatPane.addAssistantMessage(text);
+    }
+  }
   chatPane.addAssistantMessage("*Resumed previous session.* Type `/new` to start fresh.");
 }
 
