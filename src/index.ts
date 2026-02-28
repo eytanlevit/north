@@ -93,5 +93,6 @@ tui.addInputListener((data: string) => {
   return undefined;
 });
 
-// Start TUI
+// Clear screen before starting TUI
+process.stdout.write("\x1b[2J\x1b[H");
 tui.start();
