@@ -36,6 +36,7 @@ export class KanbanPane implements Component {
   private cursorIndex = 0;
   private scrollOffset = 0;
   focused = false;
+  onSelectIssue?: (issue: Issue) => void;
 
   /** Maps flat issue index to the line index in the full rendered output */
   private issueLineIndices: number[] = [];
@@ -78,6 +79,12 @@ export class KanbanPane implements Component {
   }
 
   handleInput(data: string): void {
+    if (matchesKey(data, "enter") || matchesKey(data, "return")) {
+      const issue = this.getSelectedIssue();
+      if (issue) this.onSelectIssue?.(issue);
+      return;
+    }
+
     const total = this.getFlatIssues().length;
     if (total === 0) return;
 
@@ -100,6 +107,11 @@ export class KanbanPane implements Component {
     const flat = this.getFlatIssues();
     if (flat.length === 0 || this.cursorIndex >= flat.length) return null;
     return flat[this.cursorIndex];
+  }
+
+  /** Flat list of all issues in display order (grouped by section) */
+  getAllIssues(): Issue[] {
+    return this.getFlatIssues();
   }
 
   render(width: number): string[] {
