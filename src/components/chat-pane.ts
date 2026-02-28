@@ -43,16 +43,14 @@ export class ChatPane implements Component, Focusable {
   private streamingMarkdown: Markdown | null = null;
   private scrollOffset = 0;
   private scrollLocked = true; // true = auto-scroll to bottom
-  private title: string;
 
-  constructor(tui: TUI, projectName?: string) {
+  constructor(tui: TUI) {
     this.tui = tui;
-    this.title = projectName ? ` PROJECT - ${projectName}` : " PROJECT";
     this.container = new Container();
     this.messagesContainer = new Container();
 
     // Title
-    this.messagesContainer.addChild(new Text(chalk.bold(this.title), 0, 0));
+    this.messagesContainer.addChild(new Text(chalk.bold(" PM AGENT"), 0, 0));
     this.messagesContainer.addChild(new Text(chalk.dim(" Type a message to create/manage issues"), 0, 0));
     this.messagesContainer.addChild(new Spacer(1));
 
@@ -129,7 +127,7 @@ export class ChatPane implements Component, Focusable {
 
   clear(): void {
     this.messagesContainer.clear();
-    this.messagesContainer.addChild(new Text(chalk.bold(this.title), 0, 0));
+    this.messagesContainer.addChild(new Text(chalk.bold(" PM AGENT"), 0, 0));
     this.messagesContainer.addChild(new Text(chalk.dim(" Type a message to create/manage issues"), 0, 0));
     this.messagesContainer.addChild(new Spacer(1));
     this.streamingMarkdown = null;

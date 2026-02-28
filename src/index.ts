@@ -17,7 +17,7 @@ const terminal = new ProcessTerminal();
 const tui = new TUI(terminal);
 
 // Create components
-const chatPane = new ChatPane(tui, config.name);
+const chatPane = new ChatPane(tui);
 const kanbanPane = new KanbanPane(cwd, config);
 const split = new HorizontalSplit(chatPane, kanbanPane, 0.55);
 tui.addChild(split);

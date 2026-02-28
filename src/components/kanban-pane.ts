@@ -29,6 +29,7 @@ const PRIORITY_COLOR: Record<string, (s: string) => string> = {
 
 export class KanbanPane implements Component {
   private cwd: string;
+  private config: ProjectConfig;
   private issues: Issue[] = [];
   private cachedLines?: string[];
   private cachedWidth?: number;
@@ -43,8 +44,8 @@ export class KanbanPane implements Component {
 
   constructor(cwd: string, config?: ProjectConfig) {
     this.cwd = cwd;
-    const cfg = config ?? loadConfig(cwd);
-    this.sections = buildSections(cfg);
+    this.config = config ?? loadConfig(cwd);
+    this.sections = buildSections(this.config);
     this.issues = listIssues(cwd);
   }
 
@@ -137,7 +138,8 @@ export class KanbanPane implements Component {
     let flatIndex = 0;
 
     // Title
-    lines.push(pad(chalk.bold(" BOARD") + chalk.dim(` (${this.issues.length})`), width));
+    const projectLabel = this.config.name ? `PROJECT - ${this.config.name}` : "PROJECT";
+    lines.push(pad(chalk.bold(` ${projectLabel}`) + chalk.dim(` (${this.issues.length})`), width));
     lines.push(pad(chalk.dim(" " + "─".repeat(width - 2)), width));
 
     for (const section of this.sections) {
