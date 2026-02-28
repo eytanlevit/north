@@ -94,6 +94,63 @@ sed -i '' 's/title: Original Title/title: Edited Title/' "$1"
 	assert.Equal(t, "medium", issue.Meta.Priority)
 }
 
+func TestEditCmd_TitleWithColon(t *testing.T) {
+	dir := setupProject(t)
+	chdir(t, dir)
+	writeIssue(t, dir, "NOR-1", "Original", "todo", "medium")
+
+	// Create a script that sets a title containing a colon (common YAML gotcha)
+	editorScript := filepath.Join(t.TempDir(), "colon-editor.sh")
+	script := `#!/bin/sh
+sed -i '' 's/title: Original/title: "Fix: auth bug"/' "$1"
+`
+	require.NoError(t, os.WriteFile(editorScript, []byte(script), 0755))
+	t.Setenv("EDITOR", editorScript)
+
+	origIsTerminal := isTerminal
+	isTerminal = func() bool { return true }
+	t.Cleanup(func() { isTerminal = origIsTerminal })
+
+	var buf bytes.Buffer
+	cmd := NewEditCmd()
+	cmd.SetOut(&buf)
+	cmd.SetArgs([]string{"NOR-1"})
+	require.NoError(t, cmd.Execute())
+
+	s := store.NewFileStore(dir)
+	issue, err := s.LoadIssue("NOR-1")
+	require.NoError(t, err)
+	assert.Equal(t, "Fix: auth bug", issue.Meta.Title)
+}
+
+func TestEditCmd_YAMLHintInTempFile(t *testing.T) {
+	dir := setupProject(t)
+	chdir(t, dir)
+	writeIssue(t, dir, "NOR-1", "Test", "todo", "medium")
+
+	// Create a script that captures the temp file content and exits
+	captureFile := filepath.Join(t.TempDir(), "captured.txt")
+	editorScript := filepath.Join(t.TempDir(), "capture-editor.sh")
+	script := `#!/bin/sh
+cp "$1" "` + captureFile + `"
+`
+	require.NoError(t, os.WriteFile(editorScript, []byte(script), 0755))
+	t.Setenv("EDITOR", editorScript)
+
+	origIsTerminal := isTerminal
+	isTerminal = func() bool { return true }
+	t.Cleanup(func() { isTerminal = origIsTerminal })
+
+	cmd := NewEditCmd()
+	cmd.SetArgs([]string{"NOR-1"})
+	require.NoError(t, cmd.Execute())
+
+	captured, err := os.ReadFile(captureFile)
+	require.NoError(t, err)
+	assert.Contains(t, string(captured), "# Values with special characters (: ! { } [ ]) must be quoted",
+		"temp file should contain YAML editing hint")
+}
+
 func TestEditCmd_InvalidEdit(t *testing.T) {
 	dir := setupProject(t)
 	chdir(t, dir)

@@ -155,6 +155,41 @@ func TestSerializeIssue_SortsLabels(t *testing.T) {
 	assert.Equal(t, []string{"zebra", "alpha", "middle"}, issue.Meta.Labels)
 }
 
+func TestSerializeIssue_RoundtripSpecialChars(t *testing.T) {
+	tests := []struct {
+		name  string
+		title string
+	}{
+		{"colon in title", "Fix: authentication bug"},
+		{"multiple colons", "API: Auth: Fix token refresh"},
+		{"hash in title", "Fix #123"},
+		{"brackets", "Add [WIP] feature"},
+		{"curly braces", "Config {json} support"},
+		{"leading space colon", " : edge case"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			issue := &Issue{
+				Meta: IssueMeta{
+					FormatVersion: 1,
+					ID:            "NOR-1",
+					Title:         tt.title,
+					Status:        "todo",
+					Priority:      "medium",
+					Created:       "2026-02-28",
+					Updated:       "2026-02-28",
+				},
+			}
+			data, err := SerializeIssue(issue)
+			require.NoError(t, err)
+
+			parsed, err := ParseIssue(data)
+			require.NoError(t, err, "failed to parse serialized issue with title %q, output:\n%s", tt.title, string(data))
+			assert.Equal(t, tt.title, parsed.Meta.Title)
+		})
+	}
+}
+
 func TestValidateIssue_Valid(t *testing.T) {
 	cfg := testConfig()
 	issue := &Issue{

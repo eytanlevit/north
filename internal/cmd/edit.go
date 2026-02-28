@@ -4,12 +4,15 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/eytanlevit/north/internal/model"
 	"github.com/eytanlevit/north/internal/store"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 )
+
+const editHint = "# Values with special characters (: ! { } [ ]) must be quoted\n"
 
 // isTerminal checks if stdin is a terminal. Package-level var for testing.
 var isTerminal = func() bool {
@@ -64,7 +67,9 @@ func runEdit(cmd *cobra.Command, args []string) error {
 	tmpPath := tmpFile.Name()
 	defer os.Remove(tmpPath)
 
-	if _, err := tmpFile.Write(data); err != nil {
+	// Insert YAML editing hint after the opening --- delimiter
+	hintedData := insertEditHint(data)
+	if _, err := tmpFile.Write(hintedData); err != nil {
 		tmpFile.Close()
 		return fmt.Errorf("write temp file: %w", err)
 	}
@@ -108,4 +113,13 @@ func runEdit(cmd *cobra.Command, args []string) error {
 
 	fmt.Fprintf(cmd.OutOrStdout(), "Updated %s\n", issue.Meta.ID)
 	return nil
+}
+
+// insertEditHint inserts a YAML comment after the opening --- delimiter.
+func insertEditHint(data []byte) []byte {
+	s := string(data)
+	if strings.HasPrefix(s, "---\n") {
+		return []byte("---\n" + editHint + s[4:])
+	}
+	return data
 }
