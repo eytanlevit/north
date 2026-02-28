@@ -20,7 +20,12 @@ import { loadConfig } from "./config.js";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
-export async function createPMSession(cwd: string): Promise<AgentSession> {
+export interface PMSessionResult {
+  session: AgentSession;
+  resumed: boolean;
+}
+
+export async function createPMSession(cwd: string): Promise<PMSessionResult> {
   const config = loadConfig(cwd);
   const model = getModel("anthropic", "claude-sonnet-4-5-20250929");
 
@@ -73,6 +78,9 @@ export async function createPMSession(cwd: string): Promise<AgentSession> {
   });
   await resourceLoader.reload();
 
+  const sessionManager = SessionManager.continueRecent(cwd);
+  const resumed = sessionManager.getEntries().length > 0;
+
   const { session } = await createAgentSession({
     cwd,
     model,
@@ -80,8 +88,8 @@ export async function createPMSession(cwd: string): Promise<AgentSession> {
     tools: [readTool, grepTool, findTool],
     customTools: [...pmTools, safeBash] as unknown as ToolDefinition[],
     resourceLoader,
-    sessionManager: SessionManager.create(cwd),
+    sessionManager: sessionManager,
   });
 
-  return session;
+  return { session, resumed };
 }

@@ -26,8 +26,13 @@ tui.addChild(split);
 tui.setFocus(chatPane.editor);
 tui.requestRender();
 
-// Create session
-const session = await createPMSession(cwd);
+// Create session (resumes previous if available)
+const { session, resumed } = await createPMSession(cwd);
+
+// Show resume indicator
+if (resumed) {
+  chatPane.addAssistantMessage("*Resumed previous session.* Type `/new` to start fresh.");
+}
 
 // Issue detail overlay state
 let detailOverlay: OverlayHandle | null = null;
@@ -60,6 +65,15 @@ onIssueChange(() => {
 
 // Wire chat submit → session prompt
 chatPane.onSubmit = (text: string) => {
+  const trimmed = text.trim().toLowerCase();
+  if (trimmed === "/new" || trimmed === "/clear") {
+    session.newSession().then(() => {
+      chatPane.clear();
+      chatPane.addAssistantMessage("New session started.");
+    });
+    return;
+  }
+
   chatPane.addUserMessage(text);
   session.prompt(text).catch((err: Error) => {
     chatPane.addAssistantMessage(`**Error:** ${err.message}`);

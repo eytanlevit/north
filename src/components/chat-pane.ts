@@ -125,6 +125,17 @@ export class ChatPane implements Component, Focusable {
     this.tui.requestRender();
   }
 
+  clear(): void {
+    this.messagesContainer.clear();
+    this.messagesContainer.addChild(new Text(chalk.bold(" PM AGENT"), 0, 0));
+    this.messagesContainer.addChild(new Text(chalk.dim(" Type a message to create/manage issues"), 0, 0));
+    this.messagesContainer.addChild(new Spacer(1));
+    this.streamingMarkdown = null;
+    this.scrollOffset = 0;
+    this.scrollLocked = true;
+    this.tui.requestRender();
+  }
+
   invalidate(): void {
     this.container.invalidate();
   }
