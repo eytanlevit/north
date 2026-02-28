@@ -46,6 +46,13 @@ func runSession(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// Use the current binary's absolute path so tmux can find it
+	// regardless of whether "north" is in PATH
+	self, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("resolve executable path: %w", err)
+	}
+
 	// Build left pane command
 	leftCmd := "claude"
 	if contextStr != "" {
@@ -56,7 +63,7 @@ func runSession(cmd *cobra.Command, args []string) error {
 		Name:     session.UniqueSessionName(issueID),
 		WorkDir:  root,
 		LeftCmd:  leftCmd,
-		RightCmd: "north tui",
+		RightCmd: self + " tui",
 	}
 
 	// Validate tmux is available
