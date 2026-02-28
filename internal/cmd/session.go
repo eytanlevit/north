@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 	"syscall"
 
 	"github.com/eytanlevit/north/internal/session"
@@ -52,7 +53,7 @@ func runSession(cmd *cobra.Command, args []string) error {
 	}
 
 	ts := session.TmuxSession{
-		Name:     session.SessionName(issueID),
+		Name:     session.UniqueSessionName(issueID),
 		WorkDir:  root,
 		LeftCmd:  leftCmd,
 		RightCmd: "north tui",
@@ -66,5 +67,21 @@ func runSession(cmd *cobra.Command, args []string) error {
 	// Exec into tmux (replaces current process)
 	tmuxPath, _ := exec.LookPath("tmux")
 	tmuxArgs := append([]string{"tmux"}, ts.Args()...)
-	return syscall.Exec(tmuxPath, tmuxArgs, os.Environ())
+
+	// Filter env vars that prevent clean launches:
+	// - CLAUDECODE/CLAUDE_*: prevent Claude Code "nested session" detection
+	// - TMUX: allow launching from inside an existing tmux session
+	env := os.Environ()
+	filtered := make([]string, 0, len(env))
+	for _, e := range env {
+		if strings.HasPrefix(e, "CLAUDECODE=") ||
+			strings.HasPrefix(e, "CLAUDE_SESSION_ID=") ||
+			strings.HasPrefix(e, "CLAUDE_CODE_ENTRYPOINT=") ||
+			strings.HasPrefix(e, "TMUX=") {
+			continue
+		}
+		filtered = append(filtered, e)
+	}
+
+	return syscall.Exec(tmuxPath, tmuxArgs, filtered)
 }

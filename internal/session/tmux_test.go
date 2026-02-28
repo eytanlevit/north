@@ -121,6 +121,29 @@ func TestArgs_Structure(t *testing.T) {
 	assert.Equal(t, ";", args[selectIdx-1])
 }
 
+func TestArgs_ClearsClaudeEnvVars(t *testing.T) {
+	s := TmuxSession{
+		Name:     "north",
+		WorkDir:  "/proj",
+		LeftCmd:  "claude",
+		RightCmd: "north tui",
+	}
+
+	args := s.Args()
+
+	// Should contain set-environment -u for each Claude env var
+	for _, envVar := range claudeEnvVars {
+		found := false
+		for i, a := range args {
+			if a == "set-environment" && i+2 < len(args) && args[i+1] == "-u" && args[i+2] == envVar {
+				found = true
+				break
+			}
+		}
+		assert.True(t, found, "should unset %s via set-environment -u", envVar)
+	}
+}
+
 func TestValidate_TmuxNotFound(t *testing.T) {
 	s := TmuxSession{Name: "north", WorkDir: "/proj", LeftCmd: "claude", RightCmd: "north tui"}
 
