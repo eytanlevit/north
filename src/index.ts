@@ -75,6 +75,10 @@ agent.subscribe((event: AgentEvent) => {
   }
 });
 
+// Focus starts on chat
+chatPane.focused = true;
+kanbanPane.focused = false;
+
 // Global key handling
 tui.addInputListener((data: string) => {
   // Ctrl+C → clean exit
@@ -84,10 +88,23 @@ tui.addInputListener((data: string) => {
     process.exit(0);
     return { consume: true };
   }
-  // Tab → toggle focus (future: kanban focus)
+  // Tab → toggle focus between chat and kanban
   if (matchesKey(data, "tab")) {
-    // For now, just keep focus on editor
-    tui.setFocus(chatPane.editor);
+    if (chatPane.focused) {
+      chatPane.focused = false;
+      kanbanPane.focused = true;
+      tui.setFocus(null);
+    } else {
+      kanbanPane.focused = false;
+      chatPane.focused = true;
+      tui.setFocus(chatPane.editor);
+    }
+    tui.requestRender();
+    return { consume: true };
+  }
+  // Route input to focused pane when kanban has focus
+  if (kanbanPane.focused) {
+    kanbanPane.handleInput(data);
     tui.requestRender();
     return { consume: true };
   }
