@@ -17,13 +17,32 @@ export function createShowIssueTool(cwd: string): AgentTool<typeof schema> {
       if (!issue) {
         throw new Error(`Issue ${params.id} not found`);
       }
-      const text = [
+      const lines = [
         `# ${issue.id}: ${issue.title}`,
         `**Status:** ${issue.status}  **Priority:** ${issue.priority}`,
         `**Created:** ${issue.createdAt}`,
-        "",
-        issue.body || "_No description_",
-      ].join("\n");
+      ];
+
+      if (issue.labels?.length) {
+        lines.push(`**Labels:** ${issue.labels.map((l) => `[${l}]`).join(" ")}`);
+      }
+      if (issue.parent) {
+        lines.push(`**Parent:** ${issue.parent}`);
+      }
+      if (issue.blocked_by?.length) {
+        lines.push(`**Blocked by:** ${issue.blocked_by.join(", ")}`);
+      }
+
+      lines.push("", issue.body || "_No description_");
+
+      if (issue.comments?.length) {
+        lines.push("", "---", "## Comments");
+        for (const c of issue.comments) {
+          lines.push("", `**${c.author}** (${c.date})`, c.body);
+        }
+      }
+
+      const text = lines.join("\n");
       return {
         content: [{ type: "text", text }],
         details: issue,

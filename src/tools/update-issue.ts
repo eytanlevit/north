@@ -9,6 +9,9 @@ const schema = Type.Object({
   status: Type.Optional(Type.String({ description: "New status. Valid values come from project config." })),
   priority: Type.Optional(Type.String({ description: "New priority. Valid values come from project config." })),
   body: Type.Optional(Type.String({ description: "New body" })),
+  parent: Type.Optional(Type.String({ description: "Parent issue ID (e.g. ISS-001)" })),
+  blocked_by: Type.Optional(Type.Array(Type.String(), { description: "Issue IDs that block this issue" })),
+  labels: Type.Optional(Type.Array(Type.String(), { description: "Labels (e.g. auth, backend)" })),
 });
 
 export function createUpdateIssueTool(cwd: string, config: ProjectConfig): AgentTool<typeof schema> {
@@ -36,6 +39,9 @@ export function createUpdateIssueTool(cwd: string, config: ProjectConfig): Agent
       }
       if (params.title !== undefined) issue.title = params.title;
       if (params.body !== undefined) issue.body = params.body;
+      if (params.parent !== undefined) issue.parent = params.parent;
+      if (params.blocked_by !== undefined) issue.blocked_by = params.blocked_by;
+      if (params.labels !== undefined) issue.labels = params.labels;
       writeIssue(cwd, issue);
       return {
         content: [{ type: "text", text: `Updated ${params.id}: ${issue.title} [${issue.status}]` }],

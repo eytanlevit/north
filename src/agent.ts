@@ -7,6 +7,7 @@ import { createUpdateIssueTool } from "./tools/update-issue.js";
 import { createShowIssueTool } from "./tools/show-issue.js";
 import { createAskQuestionsTool } from "./tools/ask-questions.js";
 import { loadConfig } from "./config.js";
+import { createAddCommentTool } from "./tools/add-comment.js";
 
 export function createPMAgent(cwd: string): Agent {
   const config = loadConfig(cwd);
@@ -16,6 +17,9 @@ export function createPMAgent(cwd: string): Agent {
 
 ## Your capabilities
 - Create, update, list, and show issues on the project board
+- Add comments to issues for discussion and tracking
+- Manage issue relationships: set parent issues and blocked_by dependencies
+- Tag issues with labels for categorization
 - Ask clarifying questions before creating issues when requirements are vague
 - Explore the codebase to create technically-informed issues (use read, grep, find tools)
 
@@ -39,6 +43,7 @@ export function createPMAgent(cwd: string): Agent {
     createListIssuesTool(cwd, config),
     createUpdateIssueTool(cwd, config),
     createShowIssueTool(cwd),
+    createAddCommentTool(cwd),
     createAskQuestionsTool(),
     createReadTool(cwd),
     createGrepTool(cwd),

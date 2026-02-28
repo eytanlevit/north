@@ -8,6 +8,9 @@ const schema = Type.Object({
   status: Type.Optional(Type.String({ description: "Status (default: first configured status). Valid values come from project config." })),
   priority: Type.Optional(Type.String({ description: "Priority (default: second configured priority or first). Valid values come from project config." })),
   body: Type.Optional(Type.String({ description: "Issue body in markdown" })),
+  parent: Type.Optional(Type.String({ description: "Parent issue ID (e.g. ISS-001)" })),
+  blocked_by: Type.Optional(Type.Array(Type.String(), { description: "Issue IDs that block this issue" })),
+  labels: Type.Optional(Type.Array(Type.String(), { description: "Labels (e.g. auth, backend)" })),
 });
 
 export function createCreateIssueTool(cwd: string, config: ProjectConfig): AgentTool<typeof schema> {
@@ -35,6 +38,9 @@ export function createCreateIssueTool(cwd: string, config: ProjectConfig): Agent
         priority,
         createdAt: new Date().toISOString(),
         body: params.body ?? "",
+        parent: params.parent,
+        blocked_by: params.blocked_by,
+        labels: params.labels,
       };
       writeIssue(cwd, issue);
       return {

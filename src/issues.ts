@@ -5,6 +5,12 @@ import { stringify, parse } from "yaml";
 export type Status = string;
 export type Priority = string;
 
+export interface Comment {
+  author: string;
+  date: string;
+  body: string;
+}
+
 export interface Issue {
   id: string;
   title: string;
@@ -12,6 +18,10 @@ export interface Issue {
   priority: Priority;
   createdAt: string;
   body: string;
+  comments?: Comment[];
+  parent?: string;
+  blocked_by?: string[];
+  labels?: string[];
 }
 
 type ChangeCallback = () => void;
@@ -106,4 +116,39 @@ export function nextId(cwd: string, prefix = "ISS"): string {
     if (m) max = Math.max(max, parseInt(m[1], 10));
   }
   return `${prefix}-${String(max + 1).padStart(3, "0")}`;
+}
+
+export function addComment(cwd: string, id: string, comment: Comment): Issue {
+  const issue = readIssue(cwd, id);
+  if (!issue) throw new Error(`Issue ${id} not found`);
+  if (!issue.comments) issue.comments = [];
+  issue.comments.push(comment);
+  writeIssue(cwd, issue);
+  return issue;
+}
+
+export function validateRelationships(cwd: string, issue: Issue): string[] {
+  const errors: string[] = [];
+  const allIssues = listIssues(cwd);
+  const ids = new Set(allIssues.map((i) => i.id));
+
+  if (issue.parent && !ids.has(issue.parent)) {
+    errors.push(`Parent ${issue.parent} does not exist`);
+  }
+
+  if (issue.blocked_by) {
+    for (const dep of issue.blocked_by) {
+      if (!ids.has(dep)) {
+        errors.push(`Blocked-by reference ${dep} does not exist`);
+        continue;
+      }
+      // Check circular: does the referenced issue block back on this issue?
+      const other = allIssues.find((i) => i.id === dep);
+      if (other?.blocked_by?.includes(issue.id)) {
+        errors.push(`Circular blocked_by: ${issue.id} and ${dep} block each other`);
+      }
+    }
+  }
+
+  return errors;
 }
