@@ -5,7 +5,11 @@
   "private": true,
   "scripts": {
     "dev": "tsx src/index.ts",
+    "cli": "tsx src/cli.ts",
     "test": "vitest run"
+  },
+  "bin": {
+    "pmtui": "./src/cli.ts"
   },
   "dependencies": {
     "@mariozechner/pi-agent-core": "^0.55.3",
