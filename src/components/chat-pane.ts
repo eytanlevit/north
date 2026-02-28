@@ -56,7 +56,7 @@ export class ChatPane implements Component, Focusable {
 
     this.statusText = new Text("", 0, 0);
 
-    this._editor = new Editor(tui, editorTheme);
+    this._editor = new Editor(tui, editorTheme, { paddingX: 2 });
     this._editor.onSubmit = (text: string) => {
       if (!text.trim()) return;
       this._editor.setText("");
@@ -134,6 +134,10 @@ export class ChatPane implements Component, Focusable {
 
     // Render editor and status first to know their heights
     const editorLines = this._editor.render(width);
+    // Inject "> " prompt into the first content line (after the border)
+    if (editorLines.length > 1) {
+      editorLines[1] = chalk.cyan("> ") + editorLines[1].slice(2);
+    }
     const statusLines = this.statusText.render(width);
 
     const reservedHeight = editorLines.length + statusLines.length;
