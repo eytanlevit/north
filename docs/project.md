@@ -27,13 +27,13 @@ Each issue is a single markdown file (e.g., `NOR-1.md`) with YAML frontmatter fo
 A `docs/` folder holds any attached files — PRDs, specs, API schemas, images, design docs. These provide context for both humans and agents.
 
 ### Session
-`north session` launches a tmux (or Zellij) layout with two independent processes side by side:
-- **Left pane:** Full Claude Code (independent process, full fidelity)
-- **Right pane:** `north tui` — kanban board + issue detail
+`north session` launches an integrated TUI with two panes in a single Bubble Tea app:
+- **Left pane:** Agent chat — streams Claude Code output, shows tool calls, accepts user input
+- **Right pane:** Kanban board + issue detail — auto-refreshes as the agent modifies issues
 
-Both apps are independent processes — zero embedding code. tmux handles terminal multiplexing. The TUI watches `.north/` via fsnotify and auto-refreshes when files change.
+The agent runs as a `claude --output-format stream-json` subprocess. North parses the JSON-lines stream and renders messages, tool calls, and results in the chat pane. The kanban board watches `.north/` via fsnotify and updates live as the agent creates/updates issues.
 
-As a fallback, the TUI also supports `tea.Exec()`: pressing `c` launches Claude Code fullscreen, and the TUI resumes when Claude exits.
+A simpler `north session --tmux` flag is available as a fallback, launching a tmux split with Claude Code and TUI as independent processes.
 
 ## Architecture
 
@@ -157,7 +157,7 @@ north update NOR-1 --status done    # Update issue fields
 north comment NOR-1 "message"       # Add a comment
 north edit NOR-1                    # Open issue in $EDITOR
 north context NOR-1 [--json]       # Output everything an agent needs
-north session                       # Launch tmux layout (Claude Code + TUI)
+north session [issue-id]             # Launch integrated agent TUI (--tmux for split layout)
 ```
 
 ### Context Command (Key for Agents)
@@ -201,36 +201,36 @@ This single command gives a coding agent full context to start working on an iss
 └────────────────────────────────────┘
 ```
 
-### Layout (`north session` — tmux)
+### Layout (`north session` — integrated TUI)
 ```
-┌──────────────────┬────────────────────────────────┐
-│  Claude Code     │  Issue Board                   │
-│  (independent)   │                                │
-│                  │  ┌──────┐ ┌──────┐ ┌──────┐   │
-│  > help me plan  │  │ Todo │ │ Prog │ │ Done │   │
-│    the auth      │  │      │ │      │ │      │   │
-│    system        │  │NOR-1 │ │NOR-3 │ │NOR-5 │   │
-│                  │  │NOR-2 │ │NOR-4 │ │NOR-6 │   │
-│  Claude:         │  │      │ │      │ │      │   │
-│  Here's my plan  │  └──────┘ └──────┘ └──────┘   │
-│  for auth...     │                                │
-│                  │  ── Issue Detail ────────────── │
-│  > _             │  NOR-3: Implement auth          │
-└──────────────────┴────────────────────────────────┘
+┌──────────────────────┬──────────────────────────────┐
+│  Agent Chat          │  Issue Board                 │
+│                      │                              │
+│  > Update NOR-1      │  ┌──────┐ ┌──────┐ ┌──────┐│
+│    status to done    │  │ Todo │ │ Prog │ │ Done ││
+│                      │  │      │ │      │ │      ││
+│  ✓ Bash: north       │  │NOR-2 │ │NOR-3 │ │NOR-5 ││
+│    update NOR-1      │  │      │ │NOR-4 │ │NOR-6 ││
+│    --status done     │  │      │ │      │ │NOR-1 ││
+│                      │  └──────┘ └──────┘ └──────┘│
+│  Done. Moved NOR-1   │                              │
+│  to done.            │  ── Issue Detail ──────────  │
+│                      │  NOR-1: Implement auth       │
+│  > _                 │  Status: Done                │
+└──────────────────────┴──────────────────────────────┘
+  tab switch pane  ? help  q quit
 ```
 
-- **Left pane (tmux):** Full Claude Code process. Independent — not embedded or managed by North.
-- **Right pane:** Kanban board showing issues grouped by status. Watches `.north/` via fsnotify and auto-refreshes. Select an issue to see its detail.
-- **Keyboard-driven:** vim-style navigation, shortcuts for common actions.
-- **tea.Exec() fallback:** Pressing `c` in the TUI launches Claude Code fullscreen; TUI resumes when Claude exits.
+- **Left pane:** Agent chat. Streams Claude Code subprocess output (JSON-lines), renders messages + tool calls. Text input at bottom for user prompts.
+- **Right pane:** Kanban board. Watches `.north/` via fsnotify, auto-refreshes as the agent modifies issues.
+- **Single binary:** No tmux, no split processes. One Bubble Tea app, one Go binary.
+- **Keyboard-driven:** vim-style navigation, tab to switch between chat and board panes.
 
 ### Key Interactions
-- Navigate issues with `j/k` or arrow keys
-- Press `Enter` to view issue detail
-- Press `n` to create a new issue
-- Press `s` to change status
-- Press `c` to launch Claude Code (via tea.Exec())
-- Press `?` for help
+- `Tab` to switch between chat and board panes
+- In chat: type prompt, Enter to send to agent
+- In board: `j/k` navigate issues, `Enter` for detail, `Esc`/`b` to return
+- `?` for help, `q` to quit
 
 ## Claude Code Integration
 
@@ -295,10 +295,24 @@ A Claude Code skill (installed at `~/.claude/skills/north.md` or bundled) that p
   - `internal/tui` — board model, navigation, column layout, detail view, file watcher
   - root `e2e_test.go` — full workflow, exit codes, JSON error output via built binary
 
-### M3: Session Integration
-- `north session` — launches tmux/Zellij layout (Claude Code + TUI)
-- `tea.Exec()` fallback — press `c` to launch Claude Code fullscreen from TUI
-- Context injection into Claude Code session
+### M3: Session Integration ✅ COMPLETE (tmux approach)
+- `north session [issue-id]` — launches tmux split (Claude Code + TUI)
+- Context injection: issue context pre-loaded into Claude Code initial prompt
+- Session name conflict resolution (auto-suffixes `-2`, `-3`, etc.)
+- Claude Code env var filtering (CLAUDECODE, TMUX) for clean nested launches
+- `os.Executable()` for binary path resolution in tmux panes
+- 128 tests across 7 packages (12 new session tests)
+
+### M3b: Integrated Agent TUI (replaces tmux approach)
+- `north session` — single Bubble Tea app with agent chat + kanban board
+- Spawn `claude --output-format stream-json` subprocess
+- Parse JSON-lines stream: render assistant messages, tool calls, tool results
+- Chat input pane: user types prompts, sent to Claude's stdin
+- Kanban board: existing fsnotify watcher, auto-refreshes as agent modifies issues
+- Tab to switch focus between chat and board panes
+- `north session NOR-1` pre-loads issue context into agent prompt
+- `north session --tmux` flag as fallback for the tmux split approach
+- CLAUDE.md auto-generation so the agent knows about `north` CLI commands
 
 ### M4: Skills & Hooks
 - Claude Code skill for North workflows
@@ -329,7 +343,7 @@ A Claude Code skill (installed at `~/.claude/skills/north.md` or bundled) that p
 | Storage | Markdown + YAML frontmatter | Human-readable, git-diffable, agent-friendly |
 | IDs | `PREFIX-N` (e.g., `NOR-1`) | Linear-style, human-readable, sequential |
 | TUI | Bubble Tea | Best Go TUI framework, active community |
-| Session | tmux/Zellij layout | Zero embedding code, both processes run at full fidelity |
+| Session | Embedded agent (subprocess) | Single binary, unified UX; tmux fallback available |
 | File writes | Atomic (temp + rename) | No partial writes on crash, safe for concurrent access |
 | CLI style | Flat commands | Simpler for agents, less typing for humans |
 | Agent output | `--json` flag | Agents can't parse tables; structured output is essential |
