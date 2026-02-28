@@ -12,31 +12,31 @@ import (
 
 // Comment represents a structured comment in issue frontmatter.
 type Comment struct {
-	Author string `yaml:"author"`
-	Date   string `yaml:"date"`
-	Body   string `yaml:"body"`
+	Author string `yaml:"author" json:"author"`
+	Date   string `yaml:"date" json:"date"`
+	Body   string `yaml:"body" json:"body"`
 }
 
 // IssueMeta is the YAML frontmatter of an issue file.
 type IssueMeta struct {
-	FormatVersion int       `yaml:"format_version"`
-	ID            string    `yaml:"id"`
-	Title         string    `yaml:"title"`
-	Status        string    `yaml:"status"`
-	Priority      string    `yaml:"priority"`
-	Labels        []string  `yaml:"labels,omitempty,flow"`
-	Parent        string    `yaml:"parent,omitempty"`
-	BlockedBy     []string  `yaml:"blocked_by,omitempty,flow"`
-	Docs          []string  `yaml:"docs,omitempty,flow"`
-	Created       string    `yaml:"created"`
-	Updated       string    `yaml:"updated"`
-	Comments      []Comment `yaml:"comments,omitempty"`
+	FormatVersion int       `yaml:"format_version" json:"format_version"`
+	ID            string    `yaml:"id" json:"id"`
+	Title         string    `yaml:"title" json:"title"`
+	Status        string    `yaml:"status" json:"status"`
+	Priority      string    `yaml:"priority" json:"priority"`
+	Labels        []string  `yaml:"labels,omitempty,flow" json:"labels,omitempty"`
+	Parent        string    `yaml:"parent,omitempty" json:"parent,omitempty"`
+	BlockedBy     []string  `yaml:"blocked_by,omitempty,flow" json:"blocked_by,omitempty"`
+	Docs          []string  `yaml:"docs,omitempty,flow" json:"docs,omitempty"`
+	Created       string    `yaml:"created" json:"created"`
+	Updated       string    `yaml:"updated" json:"updated"`
+	Comments      []Comment `yaml:"comments,omitempty" json:"comments,omitempty"`
 }
 
 // Issue combines frontmatter metadata with the markdown body.
 type Issue struct {
-	Meta IssueMeta
-	Body string
+	Meta IssueMeta `json:"meta"`
+	Body string    `json:"body"`
 }
 
 var idPattern = regexp.MustCompile(`^[A-Z]+-\d+$`)
