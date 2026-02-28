@@ -14,6 +14,7 @@ import { createUpdateIssueTool } from "./tools/update-issue.js";
 import { createShowIssueTool } from "./tools/show-issue.js";
 import { createAskQuestionsTool } from "./tools/ask-questions.js";
 import { createAddCommentTool } from "./tools/add-comment.js";
+import { createDeleteIssueTool } from "./tools/delete-issue.js";
 import { createSafeBashTool } from "./tools/bash-wrapper.js";
 import { loadConfig } from "./config.js";
 import { fileURLToPath } from "node:url";
@@ -26,7 +27,7 @@ export async function createPMSession(cwd: string): Promise<AgentSession> {
   const SYSTEM_PROMPT = `You are a project management assistant embedded in a TUI application.
 
 ## Your capabilities
-- Create, update, list, and show issues on the project board
+- Create, update, delete, list, and show issues on the project board
 - Add comments to issues for discussion and tracking
 - Manage issue relationships: set parent issues and blocked_by dependencies
 - Tag issues with labels for categorization
@@ -54,6 +55,7 @@ export async function createPMSession(cwd: string): Promise<AgentSession> {
     createUpdateIssueTool(cwd, config),
     createShowIssueTool(cwd),
     createAddCommentTool(cwd),
+    createDeleteIssueTool(cwd),
     createAskQuestionsTool(),
   ];
 
