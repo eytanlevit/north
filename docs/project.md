@@ -26,8 +26,14 @@ Each issue is a single markdown file (e.g., `NOR-1.md`) with YAML frontmatter fo
 ### Documents
 A `docs/` folder holds any attached files — PRDs, specs, API schemas, images, design docs. These provide context for both humans and agents.
 
-### Chat (TUI)
-The TUI embeds a Claude Code subprocess in the left pane, giving you an AI assistant with full project context. The right pane shows a kanban-style issue board.
+### Session
+`north session` launches a tmux (or Zellij) layout with two independent processes side by side:
+- **Left pane:** Full Claude Code (independent process, full fidelity)
+- **Right pane:** `north tui` — kanban board + issue detail
+
+Both apps are independent processes — zero embedding code. tmux handles terminal multiplexing. The TUI watches `.north/` via fsnotify and auto-refreshes when files change.
+
+As a fallback, the TUI also supports `tea.Exec()`: pressing `c` launches Claude Code fullscreen, and the TUI resumes when Claude exits.
 
 ## Architecture
 
@@ -42,6 +48,7 @@ The TUI embeds a Claude Code subprocess in the left pane, giving you an AI assis
 .north/
   project.md          # Project description, vision, goals
   config.yaml         # Project settings (prefix, statuses, labels, etc.)
+  CLAUDE.md           # Generated template teaching agents how to use North
   issues/
     NOR-1.md          # One file per issue
     NOR-2.md
@@ -56,6 +63,7 @@ The TUI embeds a Claude Code subprocess in the left pane, giving you an AI assis
 
 ```markdown
 ---
+format_version: 1
 id: NOR-1
 title: Implement user authentication
 status: in-progress
@@ -86,21 +94,22 @@ Started work on this. Created auth middleware in `pkg/auth/`.
 Looks good, but use RS256 instead of HS256.
 ```
 
-### Issue Statuses (Linear-style)
-- **Backlog** — Not yet planned
-- **Todo** — Planned, ready to be picked up
+### Issue Statuses
+- **Todo** — Ready to be worked on
 - **In Progress** — Actively being worked on
 - **Done** — Completed
-- **Canceled** — Won't do
+
+Additional statuses can be added via `config.yaml`.
 
 Issues stay in `issues/` regardless of status (no archiving/moving).
 
 ### Issue Metadata
 | Field        | Type       | Description                          |
 |-------------|------------|--------------------------------------|
+| `format_version` | int   | Schema version (currently `1`)       |
 | `id`        | string     | Project-prefixed ID (e.g., `NOR-1`)  |
 | `title`     | string     | Short descriptive title              |
-| `status`    | enum       | One of the 5 statuses above          |
+| `status`    | enum       | One of the statuses above            |
 | `priority`  | enum       | `urgent`, `high`, `medium`, `low`    |
 | `labels`    | string[]   | Freeform tags                        |
 | `parent`    | string?    | Parent issue ID (for sub-tasks)      |
@@ -117,11 +126,9 @@ description: "Project management for code"
 next_id: 4
 
 statuses:
-  - backlog
   - todo
   - in-progress
   - done
-  - canceled
 
 priorities:
   - urgent
@@ -132,25 +139,21 @@ priorities:
 
 ## CLI Design
 
-The CLI is the primary interface for coding agents. All commands are subcommands of `north`.
+The CLI is the primary interface for coding agents. All commands are flat subcommands of `north`. `north` walks up directories to find `.north/` (like git finds `.git/`).
 
-### Project Commands
-```bash
-north init                          # Initialize .north/ in current directory
-north project show                  # Show project description
-north project edit                  # Open project.md in $EDITOR
-```
+All read commands support `--json` for machine-readable output (agents can't parse tables). No interactive prompts when stdin is not a TTY (agent-safe).
 
-### Issue Commands
+### Commands
 ```bash
-north issue list                    # List all issues (filterable)
-north issue list --status todo      # Filter by status
-north issue list --label backend    # Filter by label
-north issue create "Title"          # Create a new issue (opens $EDITOR or inline)
-north issue show NOR-1              # Show full issue details
-north issue update NOR-1 --status done    # Update issue fields
-north issue comment NOR-1 "message"       # Add a comment
-north issue edit NOR-1              # Open issue in $EDITOR
+north init                          # Initialize .north/ (scaffolds config, CLAUDE.md template)
+north create "Title"                # Create a new issue
+north list [--status X] [--json]    # List issues (filterable)
+north show NOR-1 [--json]          # Show full issue details
+north update NOR-1 --status done    # Update issue fields
+north comment NOR-1 "message"       # Add a comment
+north edit NOR-1                    # Open issue in $EDITOR
+north context NOR-1 [--json]       # Output everything an agent needs
+north session                       # Launch tmux layout (Claude Code + TUI)
 ```
 
 ### Context Command (Key for Agents)
@@ -162,57 +165,83 @@ north context NOR-1                 # Output everything an agent needs:
                                     #   - Relevant docs (if linked)
 ```
 
+Output is deterministic — stable section ordering so diffs are meaningful.
+
 This single command gives a coding agent full context to start working on an issue.
 
-### Document Commands
-```bash
-north doc list                      # List attached documents
-north doc add path/to/file.md       # Copy a file into .north/docs/
-north doc show prd.md               # Display a document
-```
+### Agent-Safety Guarantees
+- `--json` on all read commands (agents can't parse tables)
+- Atomic file writes (write to temp file, then rename) — no partial writes on crash
+- Idempotent mutations (e.g., setting status to "done" when already done succeeds silently)
+- No interactive prompts when stdin is not a TTY
+- Deterministic `north context` output (stable section ordering)
 
 ## TUI Design
 
-### Layout
+### Layout (standalone `north tui`)
 ```
-┌──────────────────┬────────────────────────────┐
-│  Claude Code     │  Issue Board               │
-│  (subprocess)    │                             │
-│                  │  ┌──────┐ ┌──────┐ ┌──────┐│
-│  > help me plan  │  │ Todo │ │ Prog │ │ Done ││
-│    the auth      │  │      │ │      │ │      ││
-│    system        │  │NOR-1 │ │NOR-3 │ │NOR-5 ││
-│                  │  │NOR-2 │ │NOR-4 │ │NOR-6 ││
-│  Claude:         │  │      │ │      │ │      ││
-│  Here's my plan  │  └──────┘ └──────┘ └──────┘│
-│  for auth...     │                             │
-│                  │  ── Backlog ──────────────  │
-│  > _             │  NOR-7  NOR-8  NOR-9       │
-└──────────────────┴────────────────────────────┘
+┌────────────────────────────────────┐
+│  Issue Board                       │
+│                                    │
+│  ┌──────┐  ┌──────┐  ┌──────┐    │
+│  │ Todo │  │ Prog │  │ Done │    │
+│  │      │  │      │  │      │    │
+│  │NOR-1 │  │NOR-3 │  │NOR-5 │    │
+│  │NOR-2 │  │NOR-4 │  │NOR-6 │    │
+│  │      │  │      │  │      │    │
+│  └──────┘  └──────┘  └──────┘    │
+│                                    │
+│  ── Issue Detail ────────────────  │
+│  NOR-3: Implement auth             │
+│  Status: In Progress               │
+└────────────────────────────────────┘
 ```
 
-- **Left pane:** Embedded Claude Code session (subprocess). Has full project context injected. Can read/write issues via North CLI.
-- **Right pane:** Kanban board showing issues grouped by status. Navigable with keyboard. Select an issue to see its detail.
+### Layout (`north session` — tmux)
+```
+┌──────────────────┬────────────────────────────────┐
+│  Claude Code     │  Issue Board                   │
+│  (independent)   │                                │
+│                  │  ┌──────┐ ┌──────┐ ┌──────┐   │
+│  > help me plan  │  │ Todo │ │ Prog │ │ Done │   │
+│    the auth      │  │      │ │      │ │      │   │
+│    system        │  │NOR-1 │ │NOR-3 │ │NOR-5 │   │
+│                  │  │NOR-2 │ │NOR-4 │ │NOR-6 │   │
+│  Claude:         │  │      │ │      │ │      │   │
+│  Here's my plan  │  └──────┘ └──────┘ └──────┘   │
+│  for auth...     │                                │
+│                  │  ── Issue Detail ────────────── │
+│  > _             │  NOR-3: Implement auth          │
+└──────────────────┴────────────────────────────────┘
+```
+
+- **Left pane (tmux):** Full Claude Code process. Independent — not embedded or managed by North.
+- **Right pane:** Kanban board showing issues grouped by status. Watches `.north/` via fsnotify and auto-refreshes. Select an issue to see its detail.
 - **Keyboard-driven:** vim-style navigation, shortcuts for common actions.
+- **tea.Exec() fallback:** Pressing `c` in the TUI launches Claude Code fullscreen; TUI resumes when Claude exits.
 
 ### Key Interactions
 - Navigate issues with `j/k` or arrow keys
 - Press `Enter` to view issue detail
-- Press `c` to create a new issue
+- Press `n` to create a new issue
 - Press `s` to change status
-- Press `Tab` to switch focus between chat and board
+- Press `c` to launch Claude Code (via tea.Exec())
 - Press `?` for help
 
 ## Claude Code Integration
 
-### Skill: `north`
-A Claude Code skill (installed at `~/.claude/skills/north.md` or bundled with `north init`) that teaches agents how to interact with North:
-
+### CLAUDE.md Template
+`north init` generates a `.north/CLAUDE.md` file that teaches agents how to use North:
 - How to read project context (`north context NOR-1`)
-- How to create/update issues (`north issue create/update`)
+- How to create/update issues (`north create`, `north update`)
 - How to add comments when work is done
 - How to check what's blocked and what to work on next
 - Conventions for commit messages referencing issues
+
+This file is picked up automatically by Claude Code when working in the repo.
+
+### Skill: `north`
+A Claude Code skill (installed at `~/.claude/skills/north.md` or bundled) that provides the same guidance for agents working outside the repo context.
 
 ### Future: Hooks (v2)
 - **On session start:** Auto-inject active issue context into Claude Code
@@ -223,25 +252,26 @@ A Claude Code skill (installed at `~/.claude/skills/north.md` or bundled with `n
 ## Milestones
 
 ### M1: Core CLI
-- `north init` — scaffold `.north/` directory
-- `north issue create/list/show/update/comment`
-- `north project show/edit`
-- `north context` — dump full context for an issue
-- `north doc list/add/show`
-- Markdown + frontmatter file format
+- `north init` — scaffold `.north/` directory with CLAUDE.md template
+- Flat commands: `north create/list/show/update/comment/edit`
+- `north context` — deterministic full-context dump for an issue
+- `--json` flag on all read commands
+- Atomic file writes (write to temp, rename)
+- `format_version: 1` in issue frontmatter
+- Idempotent mutations, no TTY prompts when non-interactive
 - Config file for project settings
 
 ### M2: TUI
 - Bubble Tea-based terminal UI
-- Kanban board view (right pane)
+- Kanban board view (3 columns: Todo, In Progress, Done)
 - Issue detail view
 - Keyboard navigation
-- Create/edit issues from TUI
+- fsnotify file watcher for auto-refresh when `.north/` changes
 
-### M3: Chat Integration
-- Embed Claude Code subprocess in left pane
-- Inject project context into subprocess
-- Chat can read/write issues via North CLI
+### M3: Session Integration
+- `north session` — launches tmux/Zellij layout (Claude Code + TUI)
+- `tea.Exec()` fallback — press `c` to launch Claude Code fullscreen from TUI
+- Context injection into Claude Code session
 
 ### M4: Skills & Hooks
 - Claude Code skill for North workflows
@@ -249,11 +279,11 @@ A Claude Code skill (installed at `~/.claude/skills/north.md` or bundled with `n
 - Compaction hooks for context preservation
 - Staleness detection and notifications
 
-### M5: Polish & Distribution
+### M5: Distribution
 - Homebrew formula
 - `go install` support
-- Comprehensive help/docs
 - Shell completions (zsh, bash, fish)
+- Comprehensive help/docs
 
 ## Design Principles
 
@@ -272,6 +302,9 @@ A Claude Code skill (installed at `~/.claude/skills/north.md` or bundled with `n
 | Storage | Markdown + YAML frontmatter | Human-readable, git-diffable, agent-friendly |
 | IDs | `PREFIX-N` (e.g., `NOR-1`) | Linear-style, human-readable, sequential |
 | TUI | Bubble Tea | Best Go TUI framework, active community |
-| Chat | Claude Code subprocess | Full Claude Code capabilities, no custom AI needed |
+| Session | tmux/Zellij layout | Zero embedding code, both processes run at full fidelity |
+| File writes | Atomic (temp + rename) | No partial writes on crash, safe for concurrent access |
+| CLI style | Flat commands | Simpler for agents, less typing for humans |
+| Agent output | `--json` flag | Agents can't parse tables; structured output is essential |
 | Distribution | Standalone binary | `go install` + Homebrew, zero dependencies |
 | Config | YAML | Simple, human-editable, well-supported in Go |
