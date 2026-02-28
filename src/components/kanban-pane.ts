@@ -2,12 +2,24 @@ import type { Component } from "@mariozechner/pi-tui";
 import { visibleWidth, truncateToWidth } from "@mariozechner/pi-tui";
 import chalk from "chalk";
 import { listIssues, type Issue, type Status } from "../issues.js";
+import { loadConfig, type ProjectConfig } from "../config.js";
 
-const SECTIONS: { status: Status; label: string; icon: string }[] = [
-  { status: "todo", label: "TODO", icon: "○" },
-  { status: "in-progress", label: "IN PROGRESS", icon: "◑" },
-  { status: "done", label: "DONE", icon: "●" },
-];
+const DEFAULT_ICONS = ["○", "◑", "●"];
+const EXTRA_ICON = "◎";
+
+interface Section {
+  status: Status;
+  label: string;
+  icon: string;
+}
+
+function buildSections(config: ProjectConfig): Section[] {
+  return config.statuses.map((status, i) => ({
+    status,
+    label: status.toUpperCase(),
+    icon: i < DEFAULT_ICONS.length ? DEFAULT_ICONS[i] : EXTRA_ICON,
+  }));
+}
 
 const PRIORITY_COLOR: Record<string, (s: string) => string> = {
   high: chalk.red,
@@ -20,9 +32,12 @@ export class KanbanPane implements Component {
   private issues: Issue[] = [];
   private cachedLines?: string[];
   private cachedWidth?: number;
+  private sections: Section[];
 
-  constructor(cwd: string) {
+  constructor(cwd: string, config?: ProjectConfig) {
     this.cwd = cwd;
+    const cfg = config ?? loadConfig(cwd);
+    this.sections = buildSections(cfg);
     this.issues = listIssues(cwd);
   }
 
@@ -41,9 +56,10 @@ export class KanbanPane implements Component {
     if (this.cachedLines && this.cachedWidth === width) return this.cachedLines;
 
     const grouped = new Map<Status, Issue[]>();
-    for (const s of SECTIONS) grouped.set(s.status, []);
+    for (const s of this.sections) grouped.set(s.status, []);
     for (const issue of this.issues) {
-      grouped.get(issue.status)?.push(issue);
+      const bucket = grouped.get(issue.status);
+      if (bucket) bucket.push(issue);
     }
 
     const lines: string[] = [];
@@ -52,8 +68,8 @@ export class KanbanPane implements Component {
     lines.push(pad(chalk.bold(" BOARD") + chalk.dim(` (${this.issues.length})`), width));
     lines.push(pad(chalk.dim(" " + "─".repeat(width - 2)), width));
 
-    for (const section of SECTIONS) {
-      const issues = grouped.get(section.status)!;
+    for (const section of this.sections) {
+      const issues = grouped.get(section.status) ?? [];
       // Section header
       lines.push(pad("", width));
       lines.push(pad(` ${chalk.bold.cyan(section.icon + " " + section.label)} ${chalk.dim(`(${issues.length})`)}`, width));

@@ -2,8 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { stringify, parse } from "yaml";
 
-export type Status = "todo" | "in-progress" | "done";
-export type Priority = "low" | "medium" | "high";
+export type Status = string;
+export type Priority = string;
 
 export interface Issue {
   id: string;
@@ -44,13 +44,14 @@ function ensureDir(cwd: string) {
 function parseIssueFile(content: string): Issue {
   const match = content.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
   if (!match) throw new Error("Invalid issue file: missing YAML frontmatter");
-  const frontmatter = parse(match[1]) as Omit<Issue, "body">;
-  return { ...frontmatter, body: match[2].trim() };
+  const { format_version: _fv, ...frontmatter } = parse(match[1]) as Record<string, unknown>;
+  return { ...(frontmatter as Omit<Issue, "body">), body: (match[2] ?? "").trim() };
 }
 
 function serializeIssue(issue: Issue): string {
   const { body, ...frontmatter } = issue;
-  return `---\n${stringify(frontmatter).trim()}\n---\n${body}\n`;
+  const data = { format_version: 1, ...frontmatter };
+  return `---\n${stringify(data).trim()}\n---\n${body}\n`;
 }
 
 export function readIssue(cwd: string, id: string): Issue | null {
@@ -94,14 +95,15 @@ export function deleteIssue(cwd: string, id: string): boolean {
   return true;
 }
 
-export function nextId(cwd: string): string {
+export function nextId(cwd: string, prefix = "ISS"): string {
   const dir = issuesDir(cwd);
-  if (!fs.existsSync(dir)) return "ISS-001";
+  if (!fs.existsSync(dir)) return `${prefix}-001`;
   const files = fs.readdirSync(dir).filter((f) => f.endsWith(".md"));
+  const re = new RegExp(`^${prefix}-(\\d+)\\.md$`);
   let max = 0;
   for (const f of files) {
-    const m = f.match(/^ISS-(\d+)\.md$/);
+    const m = f.match(re);
     if (m) max = Math.max(max, parseInt(m[1], 10));
   }
-  return `ISS-${String(max + 1).padStart(3, "0")}`;
+  return `${prefix}-${String(max + 1).padStart(3, "0")}`;
 }

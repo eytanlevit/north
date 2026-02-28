@@ -5,9 +5,11 @@ import { KanbanPane } from "./components/kanban-pane.js";
 import { HorizontalSplit } from "./components/horizontal-split.js";
 import { createPMAgent } from "./agent.js";
 import { onIssueChange } from "./issues.js";
+import { loadConfig } from "./config.js";
 import type { AgentEvent } from "@mariozechner/pi-agent-core";
 
 const cwd = process.cwd();
+const config = loadConfig(cwd);
 
 // Bootstrap TUI
 const terminal = new ProcessTerminal();
@@ -15,7 +17,7 @@ const tui = new TUI(terminal);
 
 // Create components
 const chatPane = new ChatPane(tui);
-const kanbanPane = new KanbanPane(cwd);
+const kanbanPane = new KanbanPane(cwd, config);
 const split = new HorizontalSplit(chatPane, kanbanPane, 0.55);
 tui.addChild(split);
 

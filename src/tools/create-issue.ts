@@ -1,27 +1,38 @@
 import { Type } from "@sinclair/typebox";
 import type { AgentTool } from "@mariozechner/pi-agent-core";
 import { nextId, writeIssue, type Status, type Priority } from "../issues.js";
+import type { ProjectConfig } from "../config.js";
 
 const schema = Type.Object({
   title: Type.String({ description: "Issue title" }),
-  status: Type.Optional(Type.Union([Type.Literal("todo"), Type.Literal("in-progress"), Type.Literal("done")], { description: "Status (default: todo)" })),
-  priority: Type.Optional(Type.Union([Type.Literal("low"), Type.Literal("medium"), Type.Literal("high")], { description: "Priority (default: medium)" })),
+  status: Type.Optional(Type.String({ description: "Status (default: first configured status). Valid values come from project config." })),
+  priority: Type.Optional(Type.String({ description: "Priority (default: second configured priority or first). Valid values come from project config." })),
   body: Type.Optional(Type.String({ description: "Issue body in markdown" })),
 });
 
-export function createCreateIssueTool(cwd: string): AgentTool<typeof schema> {
+export function createCreateIssueTool(cwd: string, config: ProjectConfig): AgentTool<typeof schema> {
   return {
     name: "create_issue",
     label: "Create Issue",
-    description: "Create a new issue on the project board",
+    description: `Create a new issue on the project board. Valid statuses: ${config.statuses.join(", ")}. Valid priorities: ${config.priorities.join(", ")}.`,
     parameters: schema,
     execute: async (_toolCallId, params) => {
-      const id = nextId(cwd);
+      const status = (params.status ?? config.statuses[0]) as Status;
+      const priority = (params.priority ?? config.priorities[1] ?? config.priorities[0]) as Priority;
+
+      if (!config.statuses.includes(status)) {
+        throw new Error(`Invalid status "${status}". Valid statuses: ${config.statuses.join(", ")}`);
+      }
+      if (!config.priorities.includes(priority)) {
+        throw new Error(`Invalid priority "${priority}". Valid priorities: ${config.priorities.join(", ")}`);
+      }
+
+      const id = nextId(cwd, config.prefix);
       const issue = {
         id,
         title: params.title,
-        status: (params.status ?? "todo") as Status,
-        priority: (params.priority ?? "medium") as Priority,
+        status,
+        priority,
         createdAt: new Date().toISOString(),
         body: params.body ?? "",
       };
