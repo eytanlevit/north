@@ -22,6 +22,7 @@ export interface Issue {
   parent?: string;
   blocked_by?: string[];
   labels?: string[];
+  docs?: string[];
 }
 
 type ChangeCallback = () => void;

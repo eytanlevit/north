@@ -11,6 +11,7 @@ const schema = Type.Object({
   parent: Type.Optional(Type.String({ description: "Parent issue ID (e.g. ISS-001)" })),
   blocked_by: Type.Optional(Type.Array(Type.String(), { description: "Issue IDs that block this issue" })),
   labels: Type.Optional(Type.Array(Type.String(), { description: "Labels (e.g. auth, backend)" })),
+  docs: Type.Optional(Type.Array(Type.String(), { description: "Paths to linked docs relative to .pm/ (e.g. docs/prd.md)" })),
 });
 
 export function createCreateIssueTool(cwd: string, config: ProjectConfig): AgentTool<typeof schema> {
@@ -41,6 +42,7 @@ export function createCreateIssueTool(cwd: string, config: ProjectConfig): Agent
         parent: params.parent,
         blocked_by: params.blocked_by,
         labels: params.labels,
+        ...(params.docs ? { docs: params.docs } : {}),
       };
       writeIssue(cwd, issue);
       return {
