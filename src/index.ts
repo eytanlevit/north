@@ -122,6 +122,9 @@ chatPane.focused = true;
 kanbanPane.focused = false;
 
 // Global key handling
+const SCROLL_LINES = 3;
+const SGR_MOUSE_RE = /\x1b\[<(\d+);(\d+);(\d+)[mM]/;
+
 tui.addInputListener((data: string) => {
   // Ctrl+C → clean exit
   if (matchesKey(data, "ctrl+c")) {
@@ -130,6 +133,30 @@ tui.addInputListener((data: string) => {
     process.exit(0);
     return { consume: true };
   }
+
+  // Handle SGR mouse scroll events
+  const mouseMatch = SGR_MOUSE_RE.exec(data);
+  if (mouseMatch) {
+    const button = parseInt(mouseMatch[1], 10);
+    const x = parseInt(mouseMatch[2], 10);
+
+    // Only handle scroll: 64 = scroll up, 65 = scroll down
+    if (button !== 64 && button !== 65) return undefined;
+
+    const termWidth = process.stdout.columns || 80;
+    const splitBoundary = Math.floor(termWidth * 0.55);
+
+    if (x <= splitBoundary) {
+      // Chat pane: positive delta = scroll up (away from bottom)
+      chatPane.scrollBy(button === 64 ? SCROLL_LINES : -SCROLL_LINES);
+    } else {
+      // Kanban pane: positive delta = scroll down (content moves up)
+      kanbanPane.scrollBy(button === 64 ? -SCROLL_LINES : SCROLL_LINES);
+      tui.requestRender();
+    }
+    return { consume: true };
+  }
+
   // Route input to detail view when it's open
   if (detailView) {
     detailView.handleInput(data);
@@ -164,6 +191,17 @@ tui.addInputListener((data: string) => {
   return undefined;
 });
 
+// Clean exit handler: disable mouse reporting and stop TUI
+function cleanup() {
+  process.stdout.write("\x1b[?1000l\x1b[?1006l");
+}
+process.on("exit", cleanup);
+process.on("SIGINT", () => { cleanup(); process.exit(0); });
+process.on("SIGTERM", () => { cleanup(); process.exit(0); });
+
 // Clear screen before starting TUI
 process.stdout.write("\x1b[2J\x1b[H");
 tui.start();
+
+// Enable mouse button/wheel reporting with SGR encoding
+process.stdout.write("\x1b[?1000h\x1b[?1006h");

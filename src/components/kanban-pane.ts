@@ -78,6 +78,14 @@ export class KanbanPane implements Component {
     this.cachedWidth = undefined;
   }
 
+  /** Scroll viewport by delta lines (positive = down, negative = up) */
+  scrollBy(delta: number): void {
+    this.scrollOffset += delta;
+    if (this.scrollOffset < 0) this.scrollOffset = 0;
+    this.cachedLines = undefined;
+    this.cachedWidth = undefined;
+  }
+
   handleInput(data: string): void {
     if (matchesKey(data, "enter") || matchesKey(data, "return")) {
       const issue = this.getSelectedIssue();

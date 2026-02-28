@@ -168,6 +168,23 @@ export class ChatPane implements Component, Focusable {
     return [...visibleMessages, ...statusLines, ...editorLines];
   }
 
+  /** Scroll by delta lines (positive = up, negative = down) */
+  scrollBy(delta: number): void {
+    if (delta > 0) {
+      // Scroll up
+      this.scrollLocked = false;
+      this.scrollOffset += delta;
+    } else if (delta < 0) {
+      // Scroll down
+      this.scrollOffset += delta;
+      if (this.scrollOffset <= 0) {
+        this.scrollOffset = 0;
+        this.scrollLocked = true;
+      }
+    }
+    this.tui.requestRender();
+  }
+
   handleInput(data: string): void {
     // Scroll history with PageUp/PageDown or Shift+Up/Shift+Down
     if (matchesKey(data, "pageUp") || matchesKey(data, "shift+up")) {
