@@ -1,16 +1,13 @@
 import "dotenv/config";
-import path from "node:path";
 import { ProcessTerminal, TUI, matchesKey } from "@mariozechner/pi-tui";
 import type { OverlayHandle } from "@mariozechner/pi-tui";
 import { ChatPane } from "./components/chat-pane.js";
 import { KanbanPane } from "./components/kanban-pane.js";
 import { HorizontalSplit } from "./components/horizontal-split.js";
 import { IssueDetailView } from "./components/issue-detail.js";
-import { createPMAgent } from "./agent.js";
+import { createPMSession } from "./agent.js";
 import { onIssueChange } from "./issues.js";
 import { loadConfig } from "./config.js";
-import { ConversationLogger } from "./logger.js";
-import type { AgentEvent } from "@mariozechner/pi-agent-core";
 
 const cwd = process.cwd();
 const config = loadConfig(cwd);
@@ -29,9 +26,8 @@ tui.addChild(split);
 tui.setFocus(chatPane.editor);
 tui.requestRender();
 
-// Create agent and logger
-const agent = createPMAgent(cwd);
-const logger = new ConversationLogger(path.join(cwd, ".pm"));
+// Create session
+const session = await createPMSession(cwd);
 
 // Issue detail overlay state
 let detailOverlay: OverlayHandle | null = null;
@@ -62,20 +58,18 @@ onIssueChange(() => {
   tui.requestRender();
 });
 
-// Wire chat submit → agent prompt
+// Wire chat submit → session prompt
 chatPane.onSubmit = (text: string) => {
   chatPane.addUserMessage(text);
-  logger.logUserPrompt(text);
-  agent.prompt(text).catch((err: Error) => {
+  session.prompt(text).catch((err: Error) => {
     chatPane.addAssistantMessage(`**Error:** ${err.message}`);
   });
 };
 
-// Wire agent events → chat pane
+// Wire session events → chat pane
 let streamingText = "";
 
-agent.subscribe((event: AgentEvent) => {
-  logger.log(event);
+session.subscribe((event) => {
   switch (event.type) {
     case "message_update": {
       if (event.assistantMessageEvent.type === "text_delta") {
@@ -104,6 +98,22 @@ agent.subscribe((event: AgentEvent) => {
       streamingText = "";
       break;
     }
+    case "auto_compaction_start": {
+      chatPane.setToolStatus("Compacting context...");
+      break;
+    }
+    case "auto_compaction_end": {
+      chatPane.setToolStatus(null);
+      break;
+    }
+    case "auto_retry_start": {
+      chatPane.setToolStatus(`Retrying (attempt ${(event as any).attempt})...`);
+      break;
+    }
+    case "auto_retry_end": {
+      chatPane.setToolStatus(null);
+      break;
+    }
   }
 });
 
@@ -115,8 +125,7 @@ kanbanPane.focused = false;
 tui.addInputListener((data: string) => {
   // Ctrl+C → clean exit
   if (matchesKey(data, "ctrl+c")) {
-    agent.abort();
-    logger.close();
+    session.abort();
     tui.stop();
     process.exit(0);
     return { consume: true };
@@ -154,10 +163,6 @@ tui.addInputListener((data: string) => {
 
   return undefined;
 });
-
-// Graceful shutdown — flush logger on unexpected exit
-process.on("SIGTERM", () => { logger.close(); process.exit(0); });
-process.on("beforeExit", () => { logger.close(); });
 
 // Clear screen before starting TUI
 process.stdout.write("\x1b[2J\x1b[H");

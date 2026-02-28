@@ -1,15 +1,25 @@
-import { Agent } from "@mariozechner/pi-agent-core";
 import { getModel } from "@mariozechner/pi-ai";
-import { createReadTool, createGrepTool, createFindTool } from "@mariozechner/pi-coding-agent";
+import {
+  createAgentSession,
+  readTool,
+  grepTool,
+  findTool,
+  DefaultResourceLoader,
+  SessionManager,
+} from "@mariozechner/pi-coding-agent";
+import type { AgentSession, ToolDefinition } from "@mariozechner/pi-coding-agent";
 import { createCreateIssueTool } from "./tools/create-issue.js";
 import { createListIssuesTool } from "./tools/list-issues.js";
 import { createUpdateIssueTool } from "./tools/update-issue.js";
 import { createShowIssueTool } from "./tools/show-issue.js";
 import { createAskQuestionsTool } from "./tools/ask-questions.js";
-import { loadConfig } from "./config.js";
 import { createAddCommentTool } from "./tools/add-comment.js";
+import { createSafeBashTool } from "./tools/bash-wrapper.js";
+import { loadConfig } from "./config.js";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
 
-export function createPMAgent(cwd: string): Agent {
+export async function createPMSession(cwd: string): Promise<AgentSession> {
   const config = loadConfig(cwd);
   const model = getModel("anthropic", "claude-sonnet-4-5-20250929");
 
@@ -38,25 +48,38 @@ export function createPMAgent(cwd: string): Agent {
 - When listing issues, format them clearly with status and priority.
 `;
 
-  const tools = [
+  const pmTools = [
     createCreateIssueTool(cwd, config),
     createListIssuesTool(cwd, config),
     createUpdateIssueTool(cwd, config),
     createShowIssueTool(cwd),
     createAddCommentTool(cwd),
     createAskQuestionsTool(),
-    createReadTool(cwd),
-    createGrepTool(cwd),
-    createFindTool(cwd),
   ];
 
-  const agent = new Agent({
-    initialState: {
-      systemPrompt: SYSTEM_PROMPT,
-      model,
-      tools,
-    },
+  const safeBash = createSafeBashTool(cwd);
+
+  const bundledSkillsDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "skills");
+
+  const resourceLoader = new DefaultResourceLoader({
+    cwd,
+    systemPrompt: SYSTEM_PROMPT,
+    additionalSkillPaths: [bundledSkillsDir],
+    noExtensions: true,
+    noPromptTemplates: true,
+    noThemes: true,
+  });
+  await resourceLoader.reload();
+
+  const { session } = await createAgentSession({
+    cwd,
+    model,
+    thinkingLevel: "off",
+    tools: [readTool, grepTool, findTool],
+    customTools: [...pmTools, safeBash] as unknown as ToolDefinition[],
+    resourceLoader,
+    sessionManager: SessionManager.inMemory(cwd),
   });
 
-  return agent;
+  return session;
 }

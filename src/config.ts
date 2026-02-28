@@ -69,7 +69,7 @@ export function loadConfig(cwd: string): ProjectConfig {
 
 export function initProject(cwd: string): void {
   const pmDir = path.join(cwd, ".pm");
-  const dirs = [pmDir, path.join(pmDir, "issues"), path.join(pmDir, "docs"), path.join(pmDir, "logs")];
+  const dirs = [pmDir, path.join(pmDir, "issues"), path.join(pmDir, "docs")];
   for (const dir of dirs) {
     fs.mkdirSync(dir, { recursive: true });
   }
