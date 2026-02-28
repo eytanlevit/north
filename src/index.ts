@@ -1,8 +1,10 @@
 import "dotenv/config";
 import { ProcessTerminal, TUI, matchesKey } from "@mariozechner/pi-tui";
+import type { OverlayHandle } from "@mariozechner/pi-tui";
 import { ChatPane } from "./components/chat-pane.js";
 import { KanbanPane } from "./components/kanban-pane.js";
 import { HorizontalSplit } from "./components/horizontal-split.js";
+import { IssueDetailView } from "./components/issue-detail.js";
 import { createPMAgent } from "./agent.js";
 import { onIssueChange } from "./issues.js";
 import type { AgentEvent } from "@mariozechner/pi-agent-core";
@@ -25,6 +27,29 @@ tui.requestRender();
 
 // Create agent
 const agent = createPMAgent(cwd);
+
+// Issue detail overlay state
+let detailOverlay: OverlayHandle | null = null;
+let detailView: IssueDetailView | null = null;
+
+// Wire kanban selection → show detail overlay
+kanbanPane.onSelectIssue = (issue) => {
+  detailView = new IssueDetailView(issue, () => {
+    // Close the overlay
+    if (detailOverlay) {
+      detailOverlay.hide();
+      detailOverlay = null;
+    }
+    detailView = null;
+    tui.requestRender();
+  });
+  detailOverlay = tui.showOverlay(detailView, {
+    width: "100%",
+    maxHeight: "100%",
+    anchor: "center",
+  });
+  tui.requestRender();
+};
 
 // Wire issue changes → kanban refresh
 onIssueChange(() => {
@@ -84,13 +109,36 @@ tui.addInputListener((data: string) => {
     process.exit(0);
     return { consume: true };
   }
-  // Tab → toggle focus (future: kanban focus)
-  if (matchesKey(data, "tab")) {
-    // For now, just keep focus on editor
-    tui.setFocus(chatPane.editor);
+
+  // Route input to detail view when it's open
+  if (detailView) {
+    detailView.handleInput(data);
     tui.requestRender();
     return { consume: true };
   }
+
+  // Tab → toggle focus between chat and kanban
+  if (matchesKey(data, "tab")) {
+    if (kanbanPane.focused) {
+      kanbanPane.focused = false;
+      kanbanPane.invalidate();
+      tui.setFocus(chatPane.editor);
+    } else {
+      kanbanPane.focused = true;
+      kanbanPane.invalidate();
+      tui.setFocus(null);
+    }
+    tui.requestRender();
+    return { consume: true };
+  }
+
+  // When kanban is focused, route input to it
+  if (kanbanPane.focused) {
+    kanbanPane.handleInput(data);
+    tui.requestRender();
+    return { consume: true };
+  }
+
   return undefined;
 });
 
