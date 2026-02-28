@@ -71,8 +71,18 @@ priority: high
 labels: [auth, backend]
 parent: NOR-0
 blocked_by: []
-created: 2026-02-28
-updated: 2026-02-28
+docs: [docs/prd.md]
+created: "2026-02-28"
+updated: "2026-02-28"
+comments:
+    - author: claude-code
+      date: "2026-02-28"
+      body: |
+        Started work on this. Created auth middleware in `pkg/auth/`.
+    - author: eytan
+      date: "2026-02-28"
+      body: |
+        Looks good, but use RS256 instead of HS256.
 ---
 
 ## Description
@@ -84,15 +94,9 @@ Implement JWT-based authentication for the API...
 - [ ] Login endpoint returns JWT token
 - [ ] Token validation middleware
 - [ ] Refresh token flow
-
-## Comments
-
-### 2026-02-28 — claude-code
-Started work on this. Created auth middleware in `pkg/auth/`.
-
-### 2026-02-28 — eytan
-Looks good, but use RS256 instead of HS256.
 ```
+
+**Note:** Comments are stored as a structured YAML array in frontmatter (not as markdown headers). This ensures reliable programmatic access for agents. The `docs` field links to files in `.north/docs/` that are included in `north context` output.
 
 ### Issue Statuses
 - **Todo** — Ready to be worked on
@@ -264,8 +268,14 @@ A Claude Code skill (installed at `~/.claude/skills/north.md` or bundled) that p
 - ID generation derived from filesystem scan (not config.yaml next_id)
 - File locking via gofrs/flock for concurrent access safety
 - Exit codes: 0=success, 1=generic, 2=validation, 3=not found, 4=conflict
-- 64 tests across model, store, and cmd packages
-- Golden tests for `north context` deterministic output
+- JSON error output on stderr when `--json` flag is set (agents get structured errors)
+- YAML editing hint in `north edit` temp file (warns about quoting special chars)
+- 88 tests across 5 packages:
+  - `internal/model` — frontmatter parse/serialize roundtrip, validation, special characters
+  - `internal/store` — project root discovery, file locking, atomic writes, NextID
+  - `internal/cmd` — all 8 commands with happy path + error cases
+  - `internal/render` — table, detail, JSON, context markdown formatting
+  - root `e2e_test.go` — full workflow, exit codes, JSON error output via built binary
 
 ### M2: TUI
 - Bubble Tea-based terminal UI
