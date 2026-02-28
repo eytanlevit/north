@@ -11,14 +11,31 @@ import (
 )
 
 var claudeMDTemplate = "# North Project\n\n" +
-	"This project uses North for issue tracking. Issues are stored in `.north/issues/`.\n\n" +
+	"This project uses North for issue tracking. Issues are markdown files in `.north/issues/`.\n\n" +
 	"## Commands\n\n" +
-	"- `north create \"Title\"` — Create a new issue\n" +
-	"- `north list` — List all issues\n" +
-	"- `north show NOR-1` — Show issue details\n" +
-	"- `north update NOR-1 --status done` — Update an issue\n" +
+	"### Reading\n" +
+	"- `north list [--status X] [--json]` — List issues (filter by status)\n" +
+	"- `north show NOR-1 [--json]` — Show full issue details\n" +
+	"- `north context NOR-1 [--json]` — Get complete context (issue + related + docs)\n" +
+	"- `north stale [--days N] [--json]` — Find issues not updated in N days\n\n" +
+	"### Writing\n" +
+	"- `north create \"Title\" [--status X] [--priority X] [--label X]` — Create issue\n" +
+	"- `north update NOR-1 --status done` — Update issue fields\n" +
 	"- `north comment NOR-1 \"message\"` — Add a comment\n" +
-	"- `north context NOR-1` — Get full context for an issue\n"
+	"- `north edit NOR-1` — Open issue in $EDITOR\n\n" +
+	"### Interactive\n" +
+	"- `north tui` — Open kanban board\n" +
+	"- `north session [NOR-1]` — Launch agent chat + kanban board\n\n" +
+	"## Workflow\n\n" +
+	"1. Check context before starting: `north context NOR-1`\n" +
+	"2. Set status to in-progress: `north update NOR-1 --status in-progress`\n" +
+	"3. Do the work, commit with issue ID in message: `git commit -m \"NOR-1: description\"`\n" +
+	"4. Add a comment summarizing changes: `north comment NOR-1 \"Done: implemented X\"`\n" +
+	"5. Mark done: `north update NOR-1 --status done`\n\n" +
+	"## Tips\n\n" +
+	"- Use `--json` on read commands for structured output\n" +
+	"- Check blocked issues: `north list --json` and inspect `blocked_by` fields\n" +
+	"- Find stale work: `north stale --days 3`\n"
 
 func NewInitCmd() *cobra.Command {
 	return &cobra.Command{

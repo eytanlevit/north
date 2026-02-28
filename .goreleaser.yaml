@@ -1,0 +1,51 @@
+version: 2
+project_name: north
+
+before:
+  hooks:
+    - go mod tidy
+    - go test ./...
+
+builds:
+  - main: ./cmd/north/
+    binary: north
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+
+archives:
+  - format: tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        format: zip
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"
+
+brews:
+  - repository:
+      owner: eytanlevit
+      name: homebrew-tap
+    homepage: "https://github.com/eytanlevit/north"
+    description: "Filesystem-based project management for devs and AI agents"
+    install: |
+      bin.install "north"
+    test: |
+      system "#{bin}/north", "--help"

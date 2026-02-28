@@ -29,6 +29,9 @@ func main() {
 		cmd.NewContextCmd(),
 		cmd.NewTUICmd(),
 		cmd.NewSessionCmd(),
+		cmd.NewCompletionCmd(),
+		cmd.NewStaleCmd(),
+		cmd.NewSkillCmd(),
 	)
 
 	if err := root.Execute(); err != nil {
