@@ -39,6 +39,19 @@ function showQuestionnaire(questions: Question[], signal?: AbortSignal): Promise
       }
       questionnaireView = null;
       tui.setFocus(chatPane.editor);
+
+      // Add Q&A summary to chat log
+      if (result.cancelled) {
+        chatPane.addAssistantMessage("*Questionnaire cancelled.*");
+      } else {
+        const answerMap = new Map(result.answers.map((a) => [a.id, a.label]));
+        const lines = result.questions.map((q) => {
+          const answer = answerMap.get(q.id) ?? "—";
+          return `**Q: ${q.prompt}**\n\u2192 ${answer}`;
+        });
+        chatPane.addAssistantMessage(lines.join("\n\n"));
+      }
+
       tui.requestRender();
       resolve(result);
     };
