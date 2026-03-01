@@ -37,7 +37,9 @@ export class KanbanPane implements Component {
   private cursorIndex = 0;
   private scrollOffset = 0;
   focused = false;
+  headerSelected = false;
   onSelectIssue?: (issue: Issue) => void;
+  onSelectProject?: () => void;
 
   /** Maps flat issue index to the line index in the full rendered output */
   private issueLineIndices: number[] = [];
@@ -89,22 +91,38 @@ export class KanbanPane implements Component {
 
   handleInput(data: string): void {
     if (matchesKey(data, "enter") || matchesKey(data, "return")) {
+      if (this.headerSelected) {
+        this.onSelectProject?.();
+        return;
+      }
       const issue = this.getSelectedIssue();
       if (issue) this.onSelectIssue?.(issue);
       return;
     }
 
     const total = this.getFlatIssues().length;
-    if (total === 0) return;
 
     if (matchesKey(data, "j") || matchesKey(data, "down")) {
-      if (this.cursorIndex < total - 1) {
+      if (this.headerSelected) {
+        // Move from header to first issue
+        if (total > 0) {
+          this.headerSelected = false;
+          this.cursorIndex = 0;
+          this.cachedLines = undefined;
+          this.cachedWidth = undefined;
+        }
+      } else if (total > 0 && this.cursorIndex < total - 1) {
         this.cursorIndex++;
         this.cachedLines = undefined;
         this.cachedWidth = undefined;
       }
     } else if (matchesKey(data, "k") || matchesKey(data, "up")) {
-      if (this.cursorIndex > 0) {
+      if (!this.headerSelected && this.cursorIndex === 0) {
+        // Move from first issue to header
+        this.headerSelected = true;
+        this.cachedLines = undefined;
+        this.cachedWidth = undefined;
+      } else if (!this.headerSelected && this.cursorIndex > 0) {
         this.cursorIndex--;
         this.cachedLines = undefined;
         this.cachedWidth = undefined;
@@ -139,7 +157,10 @@ export class KanbanPane implements Component {
 
     // Title
     const projectLabel = this.config.name ? `PROJECT - ${this.config.name}` : "PROJECT";
-    lines.push(pad(chalk.bold(` ${projectLabel}`) + chalk.dim(` (${this.issues.length})`), width));
+    const headerHighlight = this.focused && this.headerSelected;
+    const headerIndicator = headerHighlight ? chalk.cyan("▸ ") : "  ";
+    const headerLine = ` ${headerIndicator}` + chalk.bold(`${projectLabel}`) + chalk.dim(` (${this.issues.length})`);
+    lines.push(pad(headerHighlight ? chalk.bgGray(headerLine) : headerLine, width));
     lines.push(pad(chalk.dim(" " + "─".repeat(width - 2)), width));
 
     for (const section of this.sections) {

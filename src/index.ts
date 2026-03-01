@@ -5,6 +5,7 @@ import { ChatPane } from "./components/chat-pane.js";
 import { KanbanPane } from "./components/kanban-pane.js";
 import { HorizontalSplit } from "./components/horizontal-split.js";
 import { IssueDetailView } from "./components/issue-detail.js";
+import { ProjectDetailView } from "./components/project-detail.js";
 import { createPMSession } from "./agent.js";
 import { onIssueChange } from "./issues.js";
 import { loadConfig } from "./config.js";
@@ -52,14 +53,32 @@ if (resumed) {
   chatPane.addAssistantMessage("*Resumed previous session.* Type `/new` to start fresh.");
 }
 
-// Issue detail overlay state
+// Detail overlay state
 let detailOverlay: OverlayHandle | null = null;
-let detailView: IssueDetailView | null = null;
+let detailView: IssueDetailView | ProjectDetailView | null = null;
 
 // Wire kanban selection → show detail overlay
 kanbanPane.onSelectIssue = (issue) => {
   detailView = new IssueDetailView(issue, () => {
     // Close the overlay
+    if (detailOverlay) {
+      detailOverlay.hide();
+      detailOverlay = null;
+    }
+    detailView = null;
+    tui.requestRender();
+  });
+  detailOverlay = tui.showOverlay(detailView, {
+    width: "100%",
+    maxHeight: "100%",
+    anchor: "center",
+  });
+  tui.requestRender();
+};
+
+// Wire kanban project header → show project detail overlay
+kanbanPane.onSelectProject = () => {
+  detailView = new ProjectDetailView(cwd, config, () => {
     if (detailOverlay) {
       detailOverlay.hide();
       detailOverlay = null;
@@ -196,18 +215,26 @@ tui.addInputListener((data: string) => {
     return { consume: true };
   }
 
-  // Tab → toggle focus between chat and kanban
+  // Tab → 3-stop cycle: chat → kanban issues → project header → chat
   if (matchesKey(data, "tab")) {
-    if (kanbanPane.focused) {
+    if (chatPane.focused) {
+      // chat → kanban issues
+      chatPane.focused = false;
+      kanbanPane.focused = true;
+      kanbanPane.headerSelected = false;
+      kanbanPane.invalidate();
+      tui.setFocus(null);
+    } else if (kanbanPane.focused && !kanbanPane.headerSelected) {
+      // kanban issues → project header
+      kanbanPane.headerSelected = true;
+      kanbanPane.invalidate();
+    } else {
+      // project header → chat
       kanbanPane.focused = false;
+      kanbanPane.headerSelected = false;
       kanbanPane.invalidate();
       chatPane.focused = true;
       tui.setFocus(chatPane.editor);
-    } else {
-      chatPane.focused = false;
-      kanbanPane.focused = true;
-      kanbanPane.invalidate();
-      tui.setFocus(null);
     }
     tui.requestRender();
     return { consume: true };
