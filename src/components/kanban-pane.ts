@@ -156,10 +156,12 @@ export class KanbanPane implements Component {
     let flatIndex = 0;
 
     // Title
-    const projectLabel = this.config.name ? `PROJECT - ${this.config.name}` : "PROJECT";
+    const projectLabel = this.config.name
+      ? `PROJECT - ${this.config.name} (${this.config.prefix}) - ${this.issues.length} open issues`
+      : `PROJECT (${this.config.prefix}) - ${this.issues.length} open issues`;
     const headerHighlight = this.focused && this.headerSelected;
     const headerIndicator = headerHighlight ? chalk.cyan("▸ ") : "  ";
-    const headerLine = ` ${headerIndicator}` + chalk.bold(`${projectLabel}`) + chalk.dim(` (${this.issues.length})`);
+    const headerLine = ` ${headerIndicator}` + chalk.bold(`${projectLabel}`);
     lines.push(pad(headerHighlight ? chalk.bgGray(headerLine) : headerLine, width));
     lines.push(pad(chalk.dim(" " + "─".repeat(width - 2)), width));
 
