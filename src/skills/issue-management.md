@@ -20,6 +20,34 @@ When asked to create an epic or large feature:
 3. Create child issues for each sub-task, setting their `parent` field to the epic's ID
 4. Set `blocked_by` relationships where tasks have dependencies
 
+## Asking Questions
+
+Use `ask_questions` to gather preferences or clarify requirements. Each question must include:
+- **id**: Unique identifier (e.g., "scope", "priority")
+- **prompt**: The full question text
+- **options**: Array of choices, each with `value`, `label`, and optional `description`
+- **label** (optional): Short tab-bar label (defaults to Q1, Q2, etc.)
+- **allowOther** (optional): Whether to show a "Type something" free-text option (default: true)
+
+Options can include a **markdown** field with ASCII/text preview content that renders in a side-by-side panel when the option is focused. Use this for layout mockups, code snippets, or comparison previews.
+
+Example:
+```json
+{
+  "questions": [
+    {
+      "id": "scope",
+      "label": "Scope",
+      "prompt": "What scope should this feature cover?",
+      "options": [
+        { "value": "minimal", "label": "Minimal MVP", "description": "Core functionality only" },
+        { "value": "full", "label": "Full feature", "description": "Including edge cases and polish" }
+      ]
+    }
+  ]
+}
+```
+
 ## Updating Issues
 
 - When moving issues between statuses, use `update_issue` with the `status` field

@@ -6,6 +6,8 @@ import { KanbanPane } from "./components/kanban-pane.js";
 import { HorizontalSplit } from "./components/horizontal-split.js";
 import { IssueDetailView } from "./components/issue-detail.js";
 import { ProjectDetailView } from "./components/project-detail.js";
+import { QuestionnaireOverlay } from "./components/questionnaire-overlay.js";
+import type { Question, QuestionnaireResult } from "./tools/ask-questions.js";
 import { createPMSession } from "./agent.js";
 import { onIssueChange } from "./issues.js";
 import { loadConfig } from "./config.js";
@@ -27,8 +29,37 @@ tui.addChild(split);
 tui.setFocus(chatPane.editor);
 tui.requestRender();
 
+// Questionnaire overlay callback for the ask_questions tool
+function showQuestionnaire(questions: Question[], signal?: AbortSignal): Promise<QuestionnaireResult> {
+  return new Promise<QuestionnaireResult>((resolve) => {
+    const onDone = (result: QuestionnaireResult) => {
+      if (questionnaireOverlay) {
+        questionnaireOverlay.hide();
+        questionnaireOverlay = null;
+      }
+      questionnaireView = null;
+      tui.setFocus(chatPane.editor);
+      tui.requestRender();
+      resolve(result);
+    };
+
+    try {
+      questionnaireView = new QuestionnaireOverlay(tui, questions, onDone, signal);
+      questionnaireOverlay = tui.showOverlay(questionnaireView, {
+        width: "100%",
+        maxHeight: "100%",
+        anchor: "center",
+      });
+      tui.requestRender();
+    } catch {
+      questionnaireView = null;
+      resolve({ questions, answers: [], cancelled: true });
+    }
+  });
+}
+
 // Create session (resumes previous if available)
-const { session, resumed } = await createPMSession(cwd);
+const { session, resumed } = await createPMSession(cwd, showQuestionnaire);
 
 // Replay previous messages into the chat pane on resume
 if (resumed) {
@@ -53,9 +84,11 @@ if (resumed) {
   chatPane.addAssistantMessage("*Resumed previous session.* Type `/new` to start fresh.");
 }
 
-// Detail overlay state
+// Overlay state
 let detailOverlay: OverlayHandle | null = null;
 let detailView: IssueDetailView | ProjectDetailView | null = null;
+let questionnaireOverlay: OverlayHandle | null = null;
+let questionnaireView: QuestionnaireOverlay | null = null;
 
 // Wire kanban selection → show detail overlay
 kanbanPane.onSelectIssue = (issue) => {
@@ -205,6 +238,13 @@ tui.addInputListener((data: string) => {
       kanbanPane.scrollBy(button === 64 ? -SCROLL_LINES : SCROLL_LINES);
       tui.requestRender();
     }
+    return { consume: true };
+  }
+
+  // Route input to questionnaire overlay when it's open
+  if (questionnaireView) {
+    questionnaireView.handleInput(data);
+    tui.requestRender();
     return { consume: true };
   }
 

@@ -13,6 +13,7 @@ import { createListIssuesTool } from "./tools/list-issues.js";
 import { createUpdateIssueTool } from "./tools/update-issue.js";
 import { createShowIssueTool } from "./tools/show-issue.js";
 import { createAskQuestionsTool } from "./tools/ask-questions.js";
+import type { ShowQuestionnaireFn } from "./tools/ask-questions.js";
 import { createAddCommentTool } from "./tools/add-comment.js";
 import { createDeleteIssueTool } from "./tools/delete-issue.js";
 import { createShowProjectTool } from "./tools/show-project.js";
@@ -27,7 +28,10 @@ export interface PMSessionResult {
   resumed: boolean;
 }
 
-export async function createPMSession(cwd: string): Promise<PMSessionResult> {
+export async function createPMSession(
+  cwd: string,
+  showQuestionnaire?: ShowQuestionnaireFn,
+): Promise<PMSessionResult> {
   const config = loadConfig(cwd);
   const model = getModel("anthropic", "claude-opus-4-6-20260201");
 
@@ -72,7 +76,7 @@ export async function createPMSession(cwd: string): Promise<PMSessionResult> {
     createDeleteIssueTool(cwd),
     createShowProjectTool(cwd),
     createUpdateProjectTool(cwd),
-    createAskQuestionsTool(),
+    createAskQuestionsTool(showQuestionnaire),
   ];
 
   const safeBash = createSafeBashTool(cwd);
