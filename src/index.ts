@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { ProcessTerminal, TUI, matchesKey } from "@mariozechner/pi-tui";
+import { ProcessTerminal, TUI, matchesKey, isKeyRelease } from "@mariozechner/pi-tui";
 import type { OverlayHandle } from "@mariozechner/pi-tui";
 import { ChatPane } from "./components/chat-pane.js";
 import { KanbanPane } from "./components/kanban-pane.js";
@@ -240,6 +240,9 @@ tui.addInputListener((data: string) => {
     }
     return { consume: true };
   }
+
+  // Filter out key release events (Kitty protocol sends both press + release)
+  if (isKeyRelease(data)) return { consume: true };
 
   // Route input to questionnaire overlay when it's open
   if (questionnaireView) {
