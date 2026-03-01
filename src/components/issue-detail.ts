@@ -2,6 +2,7 @@ import type { Component } from "@mariozechner/pi-tui";
 import { visibleWidth, truncateToWidth, matchesKey } from "@mariozechner/pi-tui";
 import chalk from "chalk";
 import type { Issue } from "../issues.js";
+import { getCategory, CATEGORY_COLOR } from "../label-category.js";
 
 export class IssueDetailView implements Component {
   private issue: Issue;
@@ -139,6 +140,15 @@ export class IssueDetailView implements Component {
 
     // Created date
     lines.push(chalk.dim("Created: ") + issue.createdAt);
+
+    // Labels & category type
+    if (issue.labels?.length) {
+      lines.push(chalk.dim("Labels: ") + issue.labels.join(", "));
+    }
+    const cat = getCategory(issue.labels);
+    if (cat) {
+      lines.push(chalk.dim("Type: ") + CATEGORY_COLOR[cat](` ${cat} `));
+    }
     lines.push("");
 
     // Body / Description

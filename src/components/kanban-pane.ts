@@ -3,6 +3,7 @@ import { visibleWidth, truncateToWidth, matchesKey } from "@mariozechner/pi-tui"
 import chalk from "chalk";
 import { listIssues, type Issue, type Status } from "../issues.js";
 import { loadConfig, type ProjectConfig } from "../config.js";
+import { getCategory, CATEGORY_COLOR } from "../label-category.js";
 
 const DEFAULT_ICONS = ["○", "◑", "●"];
 const EXTRA_ICON = "◎";
@@ -225,10 +226,9 @@ function renderIssueRow(issue: Issue, width: number, selected: boolean): string 
   const priorityChar = issue.priority[0].toUpperCase();
   const colorFn = PRIORITY_COLOR[issue.priority] ?? chalk.dim;
   const blocked = issue.blocked_by?.length ? chalk.red(" \u2298") : "";
-  const labelTags = issue.labels?.length
-    ? " " + issue.labels.map((l) => chalk.bgBlue.white(` ${l} `)).join(" ")
-    : "";
-  const suffix = blocked + labelTags;
+  const cat = getCategory(issue.labels);
+  const categoryTag = cat ? " " + CATEGORY_COLOR[cat](` ${cat} `) : "";
+  const suffix = blocked + categoryTag;
   const suffixVw = visibleWidth(suffix);
   const indicator = selected ? chalk.cyan("▸ ") : "  ";
   const prefix = ` ${indicator}${colorFn(`[${priorityChar}]`)} ${chalk.dim(issue.id)} `;
