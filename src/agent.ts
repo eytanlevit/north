@@ -15,6 +15,8 @@ import { createShowIssueTool } from "./tools/show-issue.js";
 import { createAskQuestionsTool } from "./tools/ask-questions.js";
 import { createAddCommentTool } from "./tools/add-comment.js";
 import { createDeleteIssueTool } from "./tools/delete-issue.js";
+import { createShowProjectTool } from "./tools/show-project.js";
+import { createUpdateProjectTool } from "./tools/update-project.js";
 import { createSafeBashTool } from "./tools/bash-wrapper.js";
 import { loadConfig } from "./config.js";
 import { fileURLToPath } from "node:url";
@@ -36,8 +38,15 @@ export async function createPMSession(cwd: string): Promise<PMSessionResult> {
 - Add comments to issues for discussion and tracking
 - Manage issue relationships: set parent issues and blocked_by dependencies
 - Tag issues with labels for categorization
+- Show and update project configuration (name, prefix, description, statuses, priorities)
+- Show and update project notes (.pm/project.md)
 - Ask clarifying questions before creating issues when requirements are vague
 - Explore the codebase to create technically-informed issues (use read, grep, find tools)
+
+## Project structure
+- .pm/config.yaml — project configuration (name, prefix, statuses, priorities)
+- .pm/project.md — project notes and description
+- .pm/issues/{PREFIX}-NNN.md — issue files
 
 ## Project configuration
 - Issue prefix: ${config.prefix}
@@ -61,6 +70,8 @@ export async function createPMSession(cwd: string): Promise<PMSessionResult> {
     createShowIssueTool(cwd),
     createAddCommentTool(cwd),
     createDeleteIssueTool(cwd),
+    createShowProjectTool(cwd),
+    createUpdateProjectTool(cwd),
     createAskQuestionsTool(),
   ];
 
