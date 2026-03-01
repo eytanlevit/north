@@ -198,7 +198,6 @@ export class QuestionnaireOverlay implements Component {
   render(width: number): string[] {
     if (this.cachedLines && this.cachedWidth === width) return this.cachedLines;
 
-    const termHeight = process.stdout.rows || 24;
     const innerWidth = width - 4; // border + padding
     const content = this.buildContent(innerWidth);
 
@@ -218,18 +217,10 @@ export class QuestionnaireOverlay implements Component {
       chalk.dim("┐"),
     );
 
-    // Content rows (fill up to viewable area)
-    const viewableRows = termHeight - 4;
-    const visible = content.slice(0, viewableRows);
-    for (const line of visible) {
+    // Content rows — only render actual content, no fill
+    for (const line of content) {
       const padded = padLine(line, innerWidth);
       lines.push(chalk.dim("│") + " " + padded + " " + chalk.dim("│"));
-    }
-
-    // Fill remaining space
-    const emptyRows = Math.max(0, viewableRows - visible.length);
-    for (let i = 0; i < emptyRows; i++) {
-      lines.push(chalk.dim("│") + " ".repeat(width - 2) + chalk.dim("│"));
     }
 
     // Footer
@@ -243,11 +234,6 @@ export class QuestionnaireOverlay implements Component {
 
     // Bottom border
     lines.push(chalk.dim("└") + chalk.dim("─".repeat(width - 2)) + chalk.dim("┘"));
-
-    // Pad to full terminal height
-    while (lines.length < termHeight) {
-      lines.push(" ".repeat(width));
-    }
 
     this.cachedLines = lines;
     this.cachedWidth = width;

@@ -46,8 +46,8 @@ function showQuestionnaire(questions: Question[], signal?: AbortSignal): Promise
     try {
       questionnaireView = new QuestionnaireOverlay(tui, questions, onDone, signal);
       questionnaireOverlay = tui.showOverlay(questionnaireView, {
-        width: "100%",
-        maxHeight: "100%",
+        width: "70%",
+        maxHeight: "60%",
         anchor: "center",
       });
       tui.requestRender();
