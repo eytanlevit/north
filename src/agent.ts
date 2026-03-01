@@ -29,7 +29,7 @@ export interface PMSessionResult {
 
 export async function createPMSession(cwd: string): Promise<PMSessionResult> {
   const config = loadConfig(cwd);
-  const model = getModel("anthropic", "claude-sonnet-4-5-20250929");
+  const model = getModel("anthropic", "claude-opus-4-6-20260201");
 
   const SYSTEM_PROMPT = `You are a project management assistant embedded in a TUI application.
 
