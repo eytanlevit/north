@@ -2,6 +2,7 @@ import type { Component, Focusable, MarkdownTheme } from "@mariozechner/pi-tui";
 import { Container, Editor, Markdown, Text, Spacer, visibleWidth, truncateToWidth, matchesKey } from "@mariozechner/pi-tui";
 import type { TUI, EditorTheme } from "@mariozechner/pi-tui";
 import chalk from "chalk";
+import { ActivityIndicator } from "./activity-indicator.js";
 
 const editorTheme: EditorTheme = {
   borderColor: (s: string) => chalk.cyan(s),
@@ -31,6 +32,11 @@ const markdownTheme: MarkdownTheme = {
   underline: (t: string) => chalk.underline(t),
 };
 
+export interface PendingImage {
+  data: string;
+  mimeType: string;
+}
+
 export class ChatPane implements Component, Focusable {
   focused = false;
   onSubmit?: (text: string) => void;
@@ -43,6 +49,9 @@ export class ChatPane implements Component, Focusable {
   private streamingMarkdown: Markdown | null = null;
   private scrollOffset = 0;
   private scrollLocked = true; // true = auto-scroll to bottom
+  private activityIndicator: ActivityIndicator | null = null;
+  private activityRenderInterval: ReturnType<typeof setInterval> | null = null;
+  private _pendingImages: PendingImage[] = [];
 
   constructor(tui: TUI) {
     this.tui = tui;
@@ -72,10 +81,24 @@ export class ChatPane implements Component, Focusable {
     return this._editor;
   }
 
+  addPendingImage(data: string, mimeType: string): void {
+    this._pendingImages.push({ data, mimeType });
+  }
+
+  getPendingImages(): PendingImage[] {
+    const images = this._pendingImages;
+    this._pendingImages = [];
+    return images;
+  }
+
   addUserMessage(text: string): void {
-    this.messagesContainer.addChild(
-      new Text(chalk.bold.green("You: ") + text, 1, 0)
-    );
+    const imageCount = this._pendingImages.length;
+    let display = chalk.green("▎ ") + chalk.bgRgb(25, 35, 25)(" " + text + " ");
+    if (imageCount > 0) {
+      const label = imageCount === 1 ? "1 image" : `${imageCount} images`;
+      display += " " + chalk.dim(`[📎 ${label}]`);
+    }
+    this.messagesContainer.addChild(new Text(display, 1, 0));
     this.messagesContainer.addChild(new Spacer(1));
     this.scrollLocked = true;
     this.scrollOffset = 0;
@@ -123,6 +146,47 @@ export class ChatPane implements Component, Focusable {
       this.statusText.setText("");
     }
     this.tui.requestRender();
+  }
+
+  startActivity(): void {
+    this.stopActivity();
+    this.activityIndicator = new ActivityIndicator();
+    this.activityIndicator.start();
+    this.updateActivityStatus();
+    this.activityRenderInterval = setInterval(() => {
+      this.updateActivityStatus();
+    }, 80);
+  }
+
+  addActivityTool(toolName: string): void {
+    if (this.activityIndicator) {
+      this.activityIndicator.addTool(toolName);
+      this.updateActivityStatus();
+    }
+  }
+
+  stopActivity(): void {
+    if (this.activityRenderInterval !== null) {
+      clearInterval(this.activityRenderInterval);
+      this.activityRenderInterval = null;
+    }
+    if (this.activityIndicator) {
+      this.activityIndicator.stop();
+      this.activityIndicator = null;
+    }
+    this.statusText.setText("");
+    this.tui.requestRender();
+  }
+
+  isActivityActive(): boolean {
+    return this.activityIndicator !== null;
+  }
+
+  private updateActivityStatus(): void {
+    if (this.activityIndicator) {
+      this.statusText.setText(chalk.dim(`  ${this.activityIndicator.render()}`));
+      this.tui.requestRender();
+    }
   }
 
   clear(): void {
