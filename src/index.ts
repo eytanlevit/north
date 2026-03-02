@@ -1,6 +1,8 @@
 import "dotenv/config";
+import fs from "node:fs";
 import { ProcessTerminal, TUI, matchesKey, isKeyRelease } from "@mariozechner/pi-tui";
 import type { OverlayHandle } from "@mariozechner/pi-tui";
+import { stripFrontmatter } from "@mariozechner/pi-coding-agent";
 import { ChatPane } from "./components/chat-pane.js";
 import { KanbanPane } from "./components/kanban-pane.js";
 import { HorizontalSplit } from "./components/horizontal-split.js";
@@ -11,6 +13,7 @@ import type { Question, QuestionnaireResult } from "./tools/ask-questions.js";
 import { createPMSession } from "./agent.js";
 import { onIssueChange, watchIssueDir } from "./issues.js";
 import { loadConfig } from "./config.js";
+import { expandSkillAlias, type SkillAliasConfig } from "./skill-aliases.js";
 
 const cwd = process.cwd();
 const config = loadConfig(cwd);
@@ -73,6 +76,21 @@ function showQuestionnaire(questions: Question[], signal?: AbortSignal): Promise
 
 // Create session (resumes previous if available)
 const { session, resumed } = await createPMSession(cwd, showQuestionnaire);
+
+// Resolve & cache skill aliases
+const aliases: SkillAliasConfig[] = [];
+const issueSkill = session.resourceLoader.getSkills().skills.find((s) => s.name === "issue");
+if (issueSkill) {
+  const raw = fs.readFileSync(issueSkill.filePath, "utf-8");
+  aliases.push({
+    trigger: "issue",
+    skillName: "issue",
+    skillFilePath: issueSkill.filePath,
+    skillBaseDir: issueSkill.baseDir,
+    skillContent: stripFrontmatter(raw).trim(),
+    requireArgs: true,
+  });
+}
 
 // Replay previous messages into the chat pane on resume
 if (resumed) {
@@ -160,8 +178,16 @@ chatPane.onSubmit = (text: string) => {
     return;
   }
 
-  chatPane.addUserMessage(text);
-  session.prompt(text).catch((err: Error) => {
+  // Expand skill aliases (e.g. /issue mid-sentence)
+  const result = expandSkillAlias(text, aliases);
+  if (result.type === "error") {
+    chatPane.addAssistantMessage(`**Error:** ${result.message}`);
+    return;
+  }
+
+  chatPane.addUserMessage(text); // show original to user
+  const promptText = result.type === "expanded" ? result.prompt : text;
+  session.prompt(promptText).catch((err: Error) => {
     chatPane.addAssistantMessage(`**Error:** ${err.message}`);
   });
 };
