@@ -10,7 +10,7 @@ You are creating or updating an issue based on the user's input.
 
 ## Detect Intent
 
-- If the user's text contains an existing issue ID (pattern: `{PREFIX}-NNN`, e.g. PMT-008), treat as an **update**.
+- If the user's text contains an existing issue ID (pattern: `{PREFIX}-NNN`, e.g. NOR-008), treat as an **update**.
 - Otherwise, treat as a **create**.
 
 ## Update Flow

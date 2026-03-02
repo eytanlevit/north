@@ -1,0 +1,13 @@
+prefix: NOR
+name: north
+description: A terminal-based project management tool with an AI agent chat
+  interface and issue tracker. Manage issues through natural conversation while
+  viewing your work in real-time.
+statuses:
+  - todo
+  - in-progress
+  - done
+priorities:
+  - high
+  - medium
+  - low
