@@ -93,7 +93,8 @@ export class ChatPane implements Component, Focusable {
 
   addUserMessage(text: string): void {
     const imageCount = this._pendingImages.length;
-    let display = chalk.green("▎ ") + chalk.bgRgb(25, 35, 25)(" " + text + " ");
+    const bg = chalk.bgRgb(45, 45, 52);
+    let display = bg("❯ " + text);
     if (imageCount > 0) {
       const label = imageCount === 1 ? "1 image" : `${imageCount} images`;
       display += " " + chalk.dim(`[📎 ${label}]`);
@@ -108,7 +109,7 @@ export class ChatPane implements Component, Focusable {
   addAssistantMessage(text: string): void {
     this.messagesContainer.addChild(
       new Markdown(text, 1, 0, markdownTheme, {
-        color: (t: string) => chalk.white(t),
+        color: (t: string) => t,
       })
     );
     this.messagesContainer.addChild(new Spacer(1));
@@ -120,7 +121,7 @@ export class ChatPane implements Component, Focusable {
   setStreamingText(text: string): void {
     if (!this.streamingMarkdown) {
       this.streamingMarkdown = new Markdown(text, 1, 0, markdownTheme, {
-        color: (t: string) => chalk.white(t),
+        color: (t: string) => t,
       });
       this.messagesContainer.addChild(this.streamingMarkdown);
     } else {
@@ -211,7 +212,7 @@ export class ChatPane implements Component, Focusable {
     const editorLines = this._editor.render(width);
     // Inject "> " prompt into the first content line (after the border)
     if (editorLines.length > 1) {
-      editorLines[1] = chalk.cyan("> ") + editorLines[1].slice(2);
+      editorLines[1] = chalk.cyan("❯ ") + editorLines[1].slice(2);
     }
     const statusLines = this.statusText.render(width);
 
