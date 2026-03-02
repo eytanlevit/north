@@ -191,8 +191,8 @@ export class KanbanPane implements Component {
 
     if (cursorLine < this.scrollOffset) {
       this.scrollOffset = cursorLine;
-    } else if (cursorLine >= this.scrollOffset + viewportHeight) {
-      this.scrollOffset = cursorLine - viewportHeight + 1;
+    } else if (cursorLine + 1 >= this.scrollOffset + viewportHeight) {
+      this.scrollOffset = cursorLine - viewportHeight + 2;
     }
     // Clamp scroll offset
     this.scrollOffset = Math.max(0, Math.min(this.scrollOffset, Math.max(0, lines.length - viewportHeight)));
