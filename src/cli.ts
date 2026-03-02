@@ -438,42 +438,40 @@ Notes:
 // Main dispatch
 // ---------------------------------------------------------------------------
 
-(async () => {
-  try {
-    switch (command) {
-      case "init":
-        await cmdInit();
-        break;
-      case "create":
-        cmdCreate();
-        break;
-      case "list":
-      case "ls":
-        cmdList();
-        break;
-      case "show":
-        cmdShow();
-        break;
-      case "update":
-        cmdUpdate();
-        break;
-      case "comment":
-        cmdComment();
-        break;
-      case "help":
-      case "--help":
-      case "-h":
-      case undefined:
-        printHelp();
-        break;
-      default:
-        console.error(`Unknown command: ${command}\n`);
-        printHelp();
-        process.exit(1);
-    }
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error(`Error: ${message}`);
-    process.exit(1);
+try {
+  switch (command) {
+    case "init":
+      await cmdInit();
+      break;
+    case "create":
+      cmdCreate();
+      break;
+    case "list":
+    case "ls":
+      cmdList();
+      break;
+    case "show":
+      cmdShow();
+      break;
+    case "update":
+      cmdUpdate();
+      break;
+    case "comment":
+      cmdComment();
+      break;
+    case "help":
+    case "--help":
+    case "-h":
+    case undefined:
+      printHelp();
+      break;
+    default:
+      console.error(`Unknown command: ${command}\n`);
+      printHelp();
+      process.exit(1);
   }
-})();
+} catch (err: unknown) {
+  const message = err instanceof Error ? err.message : String(err);
+  console.error(`Error: ${message}`);
+  process.exit(1);
+}
