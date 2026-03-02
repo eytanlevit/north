@@ -9,7 +9,7 @@ import { ProjectDetailView } from "./components/project-detail.js";
 import { QuestionnaireOverlay } from "./components/questionnaire-overlay.js";
 import type { Question, QuestionnaireResult } from "./tools/ask-questions.js";
 import { createPMSession } from "./agent.js";
-import { onIssueChange } from "./issues.js";
+import { onIssueChange, watchIssueDir } from "./issues.js";
 import { loadConfig } from "./config.js";
 
 const cwd = process.cwd();
@@ -145,6 +145,9 @@ onIssueChange(() => {
   kanbanPane.refresh();
   tui.requestRender();
 });
+
+// Watch .pm/issues/ for external file changes
+const stopWatcher = watchIssueDir(cwd);
 
 // Wire chat submit → session prompt
 chatPane.onSubmit = (text: string) => {
@@ -308,6 +311,7 @@ tui.addInputListener((data: string) => {
 
 // Clean exit handler: disable mouse reporting and stop TUI
 function cleanup() {
+  stopWatcher();
   process.stdout.write("\x1b[?1000l\x1b[?1006l");
 }
 process.on("exit", cleanup);

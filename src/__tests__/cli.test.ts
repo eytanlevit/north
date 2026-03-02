@@ -95,6 +95,21 @@ describe("CLI", () => {
       const issue = JSON.parse(result.stdout);
       expect(issue.id).toBe("ISS-002");
     });
+
+    it("uses prefix from config.yaml", () => {
+      // Override config with custom prefix
+      const configPath = path.join(tmpDir, ".pm", "config.yaml");
+      const config = fs.readFileSync(configPath, "utf-8").replace("prefix: ISS", "prefix: TASK");
+      fs.writeFileSync(configPath, config, "utf-8");
+
+      const result = run("create", "Custom prefix issue");
+      expect(result.status).toBe(0);
+      const issue = JSON.parse(result.stdout);
+      expect(issue.id).toBe("TASK-001");
+
+      // File should exist with the custom prefix
+      expect(fs.existsSync(path.join(tmpDir, ".pm", "issues", "TASK-001.md"))).toBe(true);
+    });
   });
 
   // ---- list ---------------------------------------------------------------

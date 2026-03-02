@@ -119,6 +119,20 @@ export function nextId(cwd: string, prefix = "ISS"): string {
   return `${prefix}-${String(max + 1).padStart(3, "0")}`;
 }
 
+export function watchIssueDir(cwd: string): () => void {
+  const dir = issuesDir(cwd);
+  if (!fs.existsSync(dir)) return () => {};
+  let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+  const watcher = fs.watch(dir, () => {
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => notifyChange(), 200);
+  });
+  return () => {
+    if (debounceTimer) clearTimeout(debounceTimer);
+    watcher.close();
+  };
+}
+
 export function addComment(cwd: string, id: string, comment: Comment): Issue {
   const issue = readIssue(cwd, id);
   if (!issue) throw new Error(`Issue ${id} not found`);

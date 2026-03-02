@@ -12,6 +12,7 @@ import {
   type Priority,
   type Issue,
 } from "./issues.js";
+import { loadConfig } from "./config.js";
 
 // ---------------------------------------------------------------------------
 // Arg helpers
@@ -166,7 +167,8 @@ function cmdCreate() {
   const priority = getFlag("priority") ? validatePriority(getFlag("priority")!) : "medium";
   const body = getFlag("body") ?? "";
 
-  const id = nextId(cwd);
+  const config = loadConfig(cwd);
+  const id = nextId(cwd, config.prefix);
   const issue: Issue = {
     id,
     title,
