@@ -2,12 +2,14 @@ import { Type } from "@sinclair/typebox";
 import type { AgentTool } from "@mariozechner/pi-agent-core";
 import { deleteIssue, readIssue } from "../issues.js";
 
+export type ShowConfirmationFn = (message: string) => Promise<boolean>;
+
 const schema = Type.Object({
   id: Type.String({ description: "Issue ID (e.g. ISS-001)" }),
   confirmed: Type.Boolean({ description: "Must be true. Always ask the user for confirmation before calling this tool." }),
 });
 
-export function createDeleteIssueTool(cwd: string): AgentTool<typeof schema> {
+export function createDeleteIssueTool(cwd: string, showConfirmation?: ShowConfirmationFn): AgentTool<typeof schema> {
   return {
     name: "delete_issue",
     label: "Delete Issue",
@@ -24,6 +26,18 @@ export function createDeleteIssueTool(cwd: string): AgentTool<typeof schema> {
       if (!issue) {
         throw new Error(`Issue ${params.id} not found`);
       }
+
+      // If a TUI confirmation callback is provided, show the dialog
+      if (showConfirmation) {
+        const confirmed = await showConfirmation(`Delete ${params.id}: ${issue.title}?`);
+        if (!confirmed) {
+          return {
+            content: [{ type: "text", text: `Deletion of ${params.id} cancelled by user.` }],
+            details: { id: params.id, cancelled: true },
+          };
+        }
+      }
+
       const title = issue.title;
       const deleted = deleteIssue(cwd, params.id);
       if (!deleted) {
