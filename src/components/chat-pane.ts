@@ -52,6 +52,8 @@ export class ChatPane implements Component, Focusable {
   private activityIndicator: ActivityIndicator | null = null;
   private activityRenderInterval: ReturnType<typeof setInterval> | null = null;
   private _pendingImages: PendingImage[] = [];
+  private _imageSelectMode = false;
+  private _imageSelectIndex = 0;
 
   constructor(tui: TUI) {
     this.tui = tui;
@@ -81,15 +83,45 @@ export class ChatPane implements Component, Focusable {
     return this._editor;
   }
 
+  get pendingImageCount(): number {
+    return this._pendingImages.length;
+  }
+
+  isImageSelectMode(): boolean {
+    return this._imageSelectMode;
+  }
+
+  enterImageSelectMode(): void {
+    this._imageSelectMode = true;
+    this._imageSelectIndex = this._pendingImages.length - 1;
+  }
+
+  exitImageSelectMode(): void {
+    this._imageSelectMode = false;
+  }
+
+  deleteSelectedImage(): void {
+    this._pendingImages.splice(this._imageSelectIndex, 1);
+    if (this._pendingImages.length === 0) {
+      this._imageSelectMode = false;
+      this._imageSelectIndex = 0;
+      return;
+    }
+    if (this._imageSelectIndex >= this._pendingImages.length) {
+      this._imageSelectIndex = this._pendingImages.length - 1;
+    }
+  }
+
   addPendingImage(data: string, mimeType: string): void {
     this._pendingImages.push({ data, mimeType });
-    this.statusText.setText(chalk.green(`  📎 ${this._pendingImages.length} image(s) attached — send a message to include`));
     this.tui.requestRender();
   }
 
   getPendingImages(): PendingImage[] {
     const images = this._pendingImages;
     this._pendingImages = [];
+    this._imageSelectMode = false;
+    this._imageSelectIndex = 0;
     return images;
   }
 
@@ -218,7 +250,29 @@ export class ChatPane implements Component, Focusable {
     }
     const statusLines = this.statusText.render(width);
 
-    const reservedHeight = editorLines.length + statusLines.length;
+    // Render image bar if pending images exist
+    const imageBarLines: string[] = [];
+    if (this._pendingImages.length > 0) {
+      const badges: string[] = [];
+      for (let i = 0; i < this._pendingImages.length; i++) {
+        const label = ` Image #${i + 1} `;
+        if (this._imageSelectMode) {
+          badges.push(
+            i === this._imageSelectIndex
+              ? chalk.bgWhite.black(`[${label}]`)
+              : chalk.dim(`[${label}]`)
+          );
+        } else {
+          badges.push(`[${label}]`);
+        }
+      }
+      const hint = this._imageSelectMode
+        ? chalk.dim("Delete to remove \u00b7 Esc to cancel")
+        : chalk.dim("(\u2191 to select)");
+      imageBarLines.push("  " + badges.join("  ") + "  " + hint);
+    }
+
+    const reservedHeight = editorLines.length + statusLines.length + imageBarLines.length;
     const availableForMessages = Math.max(1, terminalHeight - reservedHeight);
 
     // Render all messages
@@ -243,7 +297,7 @@ export class ChatPane implements Component, Focusable {
       visibleMessages = messageLines.slice(startIndex, endIndex);
     }
 
-    return [...visibleMessages, ...statusLines, ...editorLines];
+    return [...visibleMessages, ...statusLines, ...imageBarLines, ...editorLines];
   }
 
   /** Scroll by delta lines (positive = up, negative = down) */
@@ -281,6 +335,44 @@ export class ChatPane implements Component, Focusable {
       }
       this.tui.requestRender();
       return;
+    }
+
+    // Image selection mode: consume navigation, delete, escape
+    if (this._imageSelectMode) {
+      if (matchesKey(data, "left")) {
+        this._imageSelectIndex = Math.max(0, this._imageSelectIndex - 1);
+        this.tui.requestRender();
+        return;
+      }
+      if (matchesKey(data, "right")) {
+        this._imageSelectIndex = Math.min(this._pendingImages.length - 1, this._imageSelectIndex + 1);
+        this.tui.requestRender();
+        return;
+      }
+      if (matchesKey(data, "delete") || matchesKey(data, "backspace")) {
+        this.deleteSelectedImage();
+        this.tui.requestRender();
+        return;
+      }
+      if (matchesKey(data, "escape")) {
+        this.exitImageSelectMode();
+        this.tui.requestRender();
+        return;
+      }
+      // Consume up/down in select mode to prevent editor from getting them
+      if (matchesKey(data, "up") || matchesKey(data, "down")) {
+        return;
+      }
+    }
+
+    // Up arrow enters image select mode when images are pending and editor is empty
+    if (!this._imageSelectMode && this._pendingImages.length > 0 && matchesKey(data, "up")) {
+      const text = this._editor.getText();
+      if (!text || text === "") {
+        this.enterImageSelectMode();
+        this.tui.requestRender();
+        return;
+      }
     }
 
     // All other input goes to the editor
