@@ -83,6 +83,8 @@ export class ChatPane implements Component, Focusable {
 
   addPendingImage(data: string, mimeType: string): void {
     this._pendingImages.push({ data, mimeType });
+    this.statusText.setText(chalk.green(`  📎 ${this._pendingImages.length} image(s) attached — send a message to include`));
+    this.tui.requestRender();
   }
 
   getPendingImages(): PendingImage[] {
@@ -93,7 +95,7 @@ export class ChatPane implements Component, Focusable {
 
   addUserMessage(text: string): void {
     const imageCount = this._pendingImages.length;
-    const bg = chalk.bgRgb(45, 45, 52);
+    const bg = chalk.bgRgb(55, 55, 55);
     let display = bg("❯ " + text);
     if (imageCount > 0) {
       const label = imageCount === 1 ? "1 image" : `${imageCount} images`;

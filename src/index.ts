@@ -1,10 +1,12 @@
 import "dotenv/config";
 import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { ProcessTerminal, TUI, matchesKey, isKeyRelease } from "@mariozechner/pi-tui";
 import type { OverlayHandle } from "@mariozechner/pi-tui";
 import { stripFrontmatter } from "@mariozechner/pi-coding-agent";
 import type { ImageContent } from "@mariozechner/pi-ai";
-import { hasImage, getImageBase64 } from "@mariozechner/clipboard";
+import { hasImage, getImageBase64, availableFormats } from "@mariozechner/clipboard";
 import { ChatPane } from "./components/chat-pane.js";
 import { KanbanPane } from "./components/kanban-pane.js";
 import { HorizontalSplit } from "./components/horizontal-split.js";
@@ -326,13 +328,50 @@ tui.addInputListener((data: string) => {
   // Filter out key release events (Kitty protocol sends both press + release)
   if (isKeyRelease(data)) return { consume: true };
 
+  // Debug: log raw key data for clipboard investigation
+  if (data.includes("\x16")) {
+    const logPath = path.join(os.homedir(), ".north", "clipboard-debug.log");
+    try {
+      fs.appendFileSync(logPath, `[${new Date().toISOString()}] Raw input detected: ${JSON.stringify(data)} (hex: ${Buffer.from(data).toString("hex")})\n`);
+    } catch {}
+  }
+
   // Ctrl+V → paste image from clipboard
-  if (matchesKey(data, "ctrl+v") && chatPane.focused) {
-    if (hasImage()) {
-      getImageBase64().then((base64Data) => {
-        chatPane.addPendingImage(base64Data, "image/png");
-        tui.requestRender();
-      });
+  if (matchesKey(data, "ctrl+v")) {
+    const logPath = path.join(os.homedir(), ".north", "clipboard-debug.log");
+    const ts = new Date().toISOString();
+    const log = (msg: string) => {
+      try { fs.appendFileSync(logPath, `[${ts}] ${msg}\n`); } catch {}
+    };
+
+    log(`Ctrl+V detected. chatPane.focused=${chatPane.focused}`);
+
+    if (!chatPane.focused) {
+      log("Skipped: chat pane not focused");
+      return undefined;
+    }
+
+    try {
+      const imageAvailable = hasImage();
+      log(`hasImage() = ${imageAvailable}`);
+
+      if (imageAvailable) {
+        getImageBase64().then((base64Data) => {
+          log(`getImageBase64() success, length=${base64Data.length}`);
+          chatPane.addPendingImage(base64Data, "image/png");
+          tui.requestRender();
+        }).catch((err: Error) => {
+          log(`getImageBase64() failed: ${err.message}`);
+          chatPane.addAssistantMessage(`Failed to read image from clipboard: ${err.message}`);
+          tui.requestRender();
+        });
+      } else {
+        log(`No image in clipboard. Available formats: ${(() => { try { return JSON.stringify(availableFormats()); } catch { return "unknown"; } })()}`);
+        return undefined;
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log(`Error: ${msg}`);
     }
     return { consume: true };
   }
