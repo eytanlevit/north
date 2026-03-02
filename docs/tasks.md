@@ -1,4 +1,4 @@
-# pmtui — Implementation Tasks
+# north — Implementation Tasks
 
 Implementation order reflects dependencies. Tasks 1+9 merged. Tasks 4+5+6 grouped.
 
@@ -8,18 +8,18 @@ Implementation order reflects dependencies. Tasks 1+9 merged. Tasks 4+5+6 groupe
 
 ### Task 1. Project Config + Configurable Statuses/Priorities
 
-Add `.pm/project.md` and `.pm/config.yaml` to define a project. Replace all hardcoded statuses/priorities with config-driven values.
+Add `.north/project.md` and `.north/config.yaml` to define a project. Replace all hardcoded statuses/priorities with config-driven values.
 
 - `project.md` — freeform markdown describing the project (vision, goals, context)
 - `config.yaml` — structured settings:
   ```yaml
-  prefix: ISS
+  prefix: NOR
   name: "My Project"
   description: "Short description"
   statuses: [todo, in-progress, done]
   priorities: [high, medium, low]
   ```
-- `pmtui init` scaffolds `.pm/` with default config, empty project.md, and issues/docs dirs
+- `north init` scaffolds `.north/` with default config, empty project.md, and issues/docs dirs
 - `issues.ts` — `Status` and `Priority` types become dynamic (string validated against config)
 - `kanban-pane.ts` — `SECTIONS` array built from config statuses
 - Agent tools — validate against config values
@@ -52,8 +52,8 @@ comments:
 
 Add `parent` and `blocked_by` fields to issues.
 
-- `parent: ISS-001` — makes this a sub-task of ISS-001
-- `blocked_by: [ISS-002, ISS-003]` — this issue can't start until those are done
+- `parent: NOR-001` — makes this a sub-task of NOR-001
+- `blocked_by: [NOR-002, NOR-003]` — this issue can't start until those are done
 - Validate references: unknown IDs and circular `blocked_by` chains produce clear errors
 - `context` command includes blocking issue details
 - Board/list view shows relationship indicators (e.g. blocked icon, sub-task indent)
@@ -74,26 +74,26 @@ Freeform tags on issues.
 Standalone CLI commands. Separate entry point from the TUI (`src/cli.ts`).
 
 Commands:
-- `init` — scaffold `.pm/` directory
+- `init` — scaffold `.north/` directory
 - `create "Title"` — create a new issue
 - `list [--status X] [--json]` — list issues, filterable
-- `show ISS-1 [--json]` — show full issue details
-- `update ISS-1 --status done` — update issue fields
-- `comment ISS-1 "message"` — add a comment
-- `context ISS-1 [--json]` — dump full context for an issue
+- `show NOR-1 [--json]` — show full issue details
+- `update NOR-1 --status done` — update issue fields
+- `comment NOR-1 "message"` — add a comment
+- `context NOR-1 [--json]` — dump full context for an issue
 
 Requirements:
 - All read commands support `--json` for agent-safe output
 - No interactive prompts when stdin is not a TTY
-- Walks up directories to find `.pm/` (like git finds `.git/`)
+- Walks up directories to find `.north/` (like git finds `.git/`)
 - CLI and agent tools share the same service layer (no drift)
 - ID generation derived from filesystem scan (not config next_id)
 
 ### Task 6. Docs
 
-Add a `.pm/docs/` folder for attached documents (PRDs, specs, schemas).
+Add a `.north/docs/` folder for attached documents (PRDs, specs, schemas).
 
-- Issues get a `docs: [docs/prd.md]` frontmatter field linking to files in `.pm/docs/`
+- Issues get a `docs: [docs/prd.md]` frontmatter field linking to files in `.north/docs/`
 - `context` command includes linked doc contents in output
 - `init` creates the empty `docs/` dir
 
@@ -113,11 +113,11 @@ Depends on: Tasks 2, 3, 6.
 
 ### Task 8. CLAUDE.md Generation
 
-`init` generates a `.pm/CLAUDE.md` teaching agents how to use pmtui.
+`init` generates a `.north/CLAUDE.md` teaching agents how to use north.
 
 Contents:
-- How to read project context (`pmtui context ISS-1`)
-- How to create/update issues (`pmtui create`, `pmtui update`)
+- How to read project context (`north context NOR-1`)
+- How to create/update issues (`north create`, `north update`)
 - How to add comments when work is done
 - How to check what's blocked and what to work on next
 - Conventions for commit messages referencing issues
@@ -155,7 +155,7 @@ Expand a selected issue to see its full details.
 
 These apply across all tasks:
 
-- **Project root discovery** — walk up dirs to find `.pm/` (like git finds `.git/`)
+- **Project root discovery** — walk up dirs to find `.north/` (like git finds `.git/`)
 - **Concurrency safety** — TUI and CLI may touch the same files simultaneously; use atomic writes (temp + rename)
 - **Tests** — parser, config loading, CLI JSON contract, context output shape, relationship resolution
 - **Shared service layer** — CLI commands and agent tools must use the same issue/config read/write logic

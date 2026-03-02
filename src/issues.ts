@@ -45,7 +45,7 @@ function notifyChange() {
 }
 
 function issuesDir(cwd: string): string {
-  return path.join(cwd, ".pm", "issues");
+  return path.join(cwd, ".north", "issues");
 }
 
 function issuePath(cwd: string, id: string): string {
@@ -110,7 +110,7 @@ export function deleteIssue(cwd: string, id: string): boolean {
   return true;
 }
 
-export function nextId(cwd: string, prefix = "ISS"): string {
+export function nextId(cwd: string, prefix = "NOR"): string {
   const dir = issuesDir(cwd);
   if (!fs.existsSync(dir)) return `${prefix}-001`;
   const files = fs.readdirSync(dir).filter((f) => f.endsWith(".md"));

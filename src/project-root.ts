@@ -27,7 +27,7 @@ export interface FindProjectRootOptions {
  * Resolve the project root directory.
  *
  * Strategy:
- *  1. Ask git for the repo root; if `.pm/` exists there, use it.
+ *  1. Ask git for the repo root; if `.north/` exists there, use it.
  *  2. Otherwise fall back to walking up from startDir.
  */
 export function findProjectRoot(startDirOrOpts?: string | FindProjectRootOptions): string {
@@ -41,7 +41,7 @@ export function findProjectRoot(startDirOrOpts?: string | FindProjectRootOptions
   // --- Strategy 1: git root ---
   const gitRoot = resolveGitRoot();
   if (gitRoot) {
-    const pmAtGitRoot = path.join(gitRoot, ".pm");
+    const pmAtGitRoot = path.join(gitRoot, ".north");
     if (fs.existsSync(pmAtGitRoot) && fs.statSync(pmAtGitRoot).isDirectory()) {
       return gitRoot;
     }
@@ -51,7 +51,7 @@ export function findProjectRoot(startDirOrOpts?: string | FindProjectRootOptions
   let dir = path.resolve(opts.startDir ?? process.cwd());
 
   while (true) {
-    const pmDir = path.join(dir, ".pm");
+    const pmDir = path.join(dir, ".north");
     if (fs.existsSync(pmDir) && fs.statSync(pmDir).isDirectory()) {
       return dir;
     }
@@ -59,7 +59,7 @@ export function findProjectRoot(startDirOrOpts?: string | FindProjectRootOptions
     const parent = path.dirname(dir);
     if (parent === dir) {
       throw new Error(
-        "No .pm/ directory found. Are you inside a pmtui project?\nRun `pmtui init` to initialize one."
+        "No .north/ directory found. Are you inside a north project?\nRun `north init` to initialize one."
       );
     }
     dir = parent;

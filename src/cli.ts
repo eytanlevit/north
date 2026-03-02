@@ -60,13 +60,13 @@ function jsonOutput(): boolean {
 }
 
 /**
- * Normalize an ID argument to the canonical ISS-NNN format.
- * Accepts "ISS-001", "ISS-1", or plain "1".
+ * Normalize an ID argument to the canonical PREFIX-NNN format.
+ * Accepts "NOR-001", "NOR-1", or plain "1".
  */
 function normalizeId(raw: string, cwd: string): string {
-  // Read config prefix (default ISS)
-  let prefix = "ISS";
-  const configPath = path.join(cwd, ".pm", "config.yaml");
+  // Read config prefix (default NOR)
+  let prefix = "NOR";
+  const configPath = path.join(cwd, ".north", "config.yaml");
   if (fs.existsSync(configPath)) {
     try {
       const cfg = parse(fs.readFileSync(configPath, "utf-8"));
@@ -120,10 +120,10 @@ function validatePriority(p: string): Priority {
 
 function cmdInit() {
   const cwd = process.cwd();
-  const pmDir = path.join(cwd, ".pm");
+  const pmDir = path.join(cwd, ".north");
 
   if (fs.existsSync(pmDir)) {
-    console.error("Project already initialized (.pm/ exists).");
+    console.error("Project already initialized (.north/ exists).");
     process.exit(1);
   }
 
@@ -131,7 +131,7 @@ function cmdInit() {
   fs.mkdirSync(path.join(pmDir, "docs"), { recursive: true });
 
   const config = {
-    prefix: "ISS",
+    prefix: "NOR",
     name: "",
     description: "",
     statuses: ["todo", "in-progress", "done"],
@@ -148,7 +148,7 @@ function cmdInit() {
   fs.writeFileSync(tmpProject, "# Project\n\nDescribe your project here.\n", "utf-8");
   fs.renameSync(tmpProject, projectMd);
 
-  console.log("Initialized pmtui project in .pm/");
+  console.log("Initialized north project in .north/");
 }
 
 // ---- create ---------------------------------------------------------------
@@ -159,7 +159,7 @@ function cmdCreate() {
   const title = pos[0];
 
   if (!title) {
-    console.error('Usage: pmtui create "Title" [--status STATUS] [--priority PRIORITY] [--body "text"]');
+    console.error('Usage: north create "Title" [--status STATUS] [--priority PRIORITY] [--body "text"]');
     process.exit(1);
   }
 
@@ -226,7 +226,7 @@ function cmdShow() {
   const rawId = pos[0];
 
   if (!rawId) {
-    console.error("Usage: pmtui show ID [--json]");
+    console.error("Usage: north show ID [--json]");
     process.exit(1);
   }
 
@@ -261,7 +261,7 @@ function cmdUpdate() {
   const rawId = pos[0];
 
   if (!rawId) {
-    console.error("Usage: pmtui update ID [--status STATUS] [--priority PRIORITY] [--title TITLE] [--body BODY]");
+    console.error("Usage: north update ID [--status STATUS] [--priority PRIORITY] [--title TITLE] [--body BODY]");
     process.exit(1);
   }
 
@@ -301,7 +301,7 @@ function cmdComment() {
   const message = pos[1];
 
   if (!rawId || !message) {
-    console.error('Usage: pmtui comment ID "message" [--author AUTHOR]');
+    console.error('Usage: north comment ID "message" [--author AUTHOR]');
     process.exit(1);
   }
 
@@ -332,12 +332,12 @@ function cmdComment() {
 // ---- help -----------------------------------------------------------------
 
 function printHelp() {
-  const help = `pmtui - Project management TUI & CLI
+  const help = `north - Project management TUI & CLI
 
-Usage: pmtui <command> [options]
+Usage: north <command> [options]
 
 Commands:
-  init                              Initialize a new project (.pm/ directory)
+  init                              Initialize a new project (.north/ directory)
   create "Title" [options]          Create a new issue
     --status STATUS                 Status: todo, in-progress, done (default: todo)
     --priority PRIORITY             Priority: low, medium, high (default: medium)
@@ -357,7 +357,7 @@ Commands:
   help                              Show this help message
 
 Notes:
-  - ID can be "ISS-001" or just "1"
+  - ID can be "NOR-001" or just "1"
   - When stdout is not a TTY, output defaults to JSON
 `;
   console.log(help);

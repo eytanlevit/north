@@ -7,7 +7,7 @@ import { defaultConfig, loadConfig, validateConfig, initProject } from "../confi
 let tmpDir: string;
 
 beforeEach(() => {
-  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pmtui-config-test-"));
+  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "north-config-test-"));
 });
 
 afterEach(() => {
@@ -17,7 +17,7 @@ afterEach(() => {
 describe("defaultConfig", () => {
   it("returns expected defaults", () => {
     const config = defaultConfig();
-    expect(config.prefix).toBe("ISS");
+    expect(config.prefix).toBe("NOR");
     expect(config.name).toBe("My Project");
     expect(config.description).toBe("");
     expect(config.statuses).toEqual(["todo", "in-progress", "done"]);
@@ -32,7 +32,7 @@ describe("loadConfig", () => {
   });
 
   it("reads and parses a config.yaml file", () => {
-    const pmDir = path.join(tmpDir, ".pm");
+    const pmDir = path.join(tmpDir, ".north");
     fs.mkdirSync(pmDir, { recursive: true });
     fs.writeFileSync(
       path.join(pmDir, "config.yaml"),
@@ -62,7 +62,7 @@ describe("loadConfig", () => {
   });
 
   it("merges partial config with defaults", () => {
-    const pmDir = path.join(tmpDir, ".pm");
+    const pmDir = path.join(tmpDir, ".north");
     fs.mkdirSync(pmDir, { recursive: true });
     fs.writeFileSync(
       path.join(pmDir, "config.yaml"),
@@ -118,23 +118,23 @@ describe("initProject", () => {
   it("scaffolds correct directory structure", () => {
     initProject(tmpDir);
 
-    expect(fs.existsSync(path.join(tmpDir, ".pm"))).toBe(true);
-    expect(fs.existsSync(path.join(tmpDir, ".pm", "issues"))).toBe(true);
-    expect(fs.existsSync(path.join(tmpDir, ".pm", "docs"))).toBe(true);
-    expect(fs.existsSync(path.join(tmpDir, ".pm", "config.yaml"))).toBe(true);
-    expect(fs.existsSync(path.join(tmpDir, ".pm", "project.md"))).toBe(true);
+    expect(fs.existsSync(path.join(tmpDir, ".north"))).toBe(true);
+    expect(fs.existsSync(path.join(tmpDir, ".north", "issues"))).toBe(true);
+    expect(fs.existsSync(path.join(tmpDir, ".north", "docs"))).toBe(true);
+    expect(fs.existsSync(path.join(tmpDir, ".north", "config.yaml"))).toBe(true);
+    expect(fs.existsSync(path.join(tmpDir, ".north", "project.md"))).toBe(true);
   });
 
   it("writes default config.yaml content", () => {
     initProject(tmpDir);
 
     const config = loadConfig(tmpDir);
-    expect(config.prefix).toBe("ISS");
+    expect(config.prefix).toBe("NOR");
     expect(config.statuses).toEqual(["todo", "in-progress", "done"]);
   });
 
   it("does not overwrite existing config.yaml", () => {
-    const pmDir = path.join(tmpDir, ".pm");
+    const pmDir = path.join(tmpDir, ".north");
     fs.mkdirSync(pmDir, { recursive: true });
     fs.writeFileSync(
       path.join(pmDir, "config.yaml"),

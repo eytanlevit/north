@@ -8,8 +8,8 @@ describe("watchIssueDir", () => {
   let tmpDir: string;
 
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pmtui-watcher-test-"));
-    fs.mkdirSync(path.join(tmpDir, ".pm", "issues"), { recursive: true });
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "north-watcher-test-"));
+    fs.mkdirSync(path.join(tmpDir, ".north", "issues"), { recursive: true });
   });
 
   afterEach(() => {
@@ -28,7 +28,7 @@ describe("watchIssueDir", () => {
 
     // Write a file externally (simulating another process)
     fs.writeFileSync(
-      path.join(tmpDir, ".pm", "issues", "EXT-001.md"),
+      path.join(tmpDir, ".north", "issues", "EXT-001.md"),
       "---\nid: EXT-001\ntitle: External\n---\n",
       "utf-8",
     );
@@ -46,7 +46,7 @@ describe("watchIssueDir", () => {
   });
 
   it("returns a no-op cleanup when directory does not exist", () => {
-    const stopWatcher = watchIssueDir("/tmp/nonexistent-pmtui-dir-xyz");
+    const stopWatcher = watchIssueDir("/tmp/nonexistent-north-dir-xyz");
     // Should not throw
     stopWatcher();
   });

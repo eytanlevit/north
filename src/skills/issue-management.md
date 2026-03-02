@@ -1,6 +1,6 @@
 ---
 name: issue-management
-description: Detailed guide for managing project issues in pmtui
+description: Detailed guide for managing project issues in north
 ---
 
 # Issue Management Guide

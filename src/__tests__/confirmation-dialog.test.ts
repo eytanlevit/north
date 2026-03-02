@@ -3,7 +3,7 @@ import { ConfirmationDialog } from "../components/confirmation-dialog.js";
 
 describe("ConfirmationDialog", () => {
   it("defaults to cancel", () => {
-    const dialog = new ConfirmationDialog("Delete PMT-001: Test issue?");
+    const dialog = new ConfirmationDialog("Delete NOR-001: Test issue?");
     // Render to inspect initial state — Cancel should be selected (highlighted)
     const lines = dialog.render(40);
     const output = lines.join("\n");
@@ -14,7 +14,7 @@ describe("ConfirmationDialog", () => {
   });
 
   it("Tab switches buttons", () => {
-    const dialog = new ConfirmationDialog("Delete PMT-001: Test issue?");
+    const dialog = new ConfirmationDialog("Delete NOR-001: Test issue?");
     expect(dialog.selectedButton).toBe("cancel");
     dialog.handleInput("\t");
     expect(dialog.selectedButton).toBe("delete");
@@ -23,7 +23,7 @@ describe("ConfirmationDialog", () => {
   });
 
   it("Enter on cancel resolves false", async () => {
-    const dialog = new ConfirmationDialog("Delete PMT-001: Test issue?");
+    const dialog = new ConfirmationDialog("Delete NOR-001: Test issue?");
     const promise = dialog.promise;
     // Default is cancel, press Enter
     dialog.handleInput("\r");
@@ -32,7 +32,7 @@ describe("ConfirmationDialog", () => {
   });
 
   it("Enter on confirm resolves true", async () => {
-    const dialog = new ConfirmationDialog("Delete PMT-001: Test issue?");
+    const dialog = new ConfirmationDialog("Delete NOR-001: Test issue?");
     const promise = dialog.promise;
     // Tab to Delete, then Enter
     dialog.handleInput("\t");
@@ -43,7 +43,7 @@ describe("ConfirmationDialog", () => {
   });
 
   it("Escape resolves false", async () => {
-    const dialog = new ConfirmationDialog("Delete PMT-001: Test issue?");
+    const dialog = new ConfirmationDialog("Delete NOR-001: Test issue?");
     const promise = dialog.promise;
     dialog.handleInput("\x1b");
     const result = await promise;
@@ -51,7 +51,7 @@ describe("ConfirmationDialog", () => {
   });
 
   it("idempotent resolve guard prevents double-resolve", async () => {
-    const dialog = new ConfirmationDialog("Delete PMT-001: Test issue?");
+    const dialog = new ConfirmationDialog("Delete NOR-001: Test issue?");
     const promise = dialog.promise;
     // Press Escape twice — should not throw
     dialog.handleInput("\x1b");

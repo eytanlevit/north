@@ -21,11 +21,11 @@ describe("generateClaudeMd", () => {
   it("contains CLI command examples", () => {
     const result = generateClaudeMd();
     expect(result).toContain("npx tsx src/cli.ts list");
-    expect(result).toContain("npx tsx src/cli.ts show ISS-001");
+    expect(result).toContain("npx tsx src/cli.ts show NOR-001");
     expect(result).toContain("npx tsx src/cli.ts create");
-    expect(result).toContain("npx tsx src/cli.ts update ISS-001");
-    expect(result).toContain("npx tsx src/cli.ts comment ISS-001");
-    expect(result).toContain("npx tsx src/cli.ts context ISS-001");
+    expect(result).toContain("npx tsx src/cli.ts update NOR-001");
+    expect(result).toContain("npx tsx src/cli.ts comment NOR-001");
+    expect(result).toContain("npx tsx src/cli.ts context NOR-001");
   });
 
   it("has valid markdown with no unclosed code blocks", () => {
@@ -43,10 +43,10 @@ describe("generateClaudeMd", () => {
 
   it("documents the .pm directory structure", () => {
     const result = generateClaudeMd();
-    expect(result).toContain(".pm/config.yaml");
-    expect(result).toContain(".pm/project.md");
-    expect(result).toContain(".pm/issues/");
-    expect(result).toContain(".pm/docs/");
-    expect(result).toContain(".pm/CLAUDE.md");
+    expect(result).toContain(".north/config.yaml");
+    expect(result).toContain(".north/project.md");
+    expect(result).toContain(".north/issues/");
+    expect(result).toContain(".north/docs/");
+    expect(result).toContain(".north/CLAUDE.md");
   });
 });

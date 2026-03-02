@@ -10,7 +10,7 @@ describe("agent lifecycle", () => {
   let tmpDir: string;
 
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pmtui-test-"));
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "north-test-"));
   });
 
   afterEach(() => {
@@ -19,7 +19,7 @@ describe("agent lifecycle", () => {
 
   function makeIssue(overrides?: Partial<Issue>): Issue {
     return {
-      id: "PMT-001",
+      id: "NOR-001",
       title: "Test issue",
       status: "todo",
       priority: "medium",
@@ -34,11 +34,11 @@ describe("agent lifecycle", () => {
       writeIssue(tmpDir, makeIssue());
       const tool = createAcquireIssueTool(tmpDir);
       await tool.execute("call-1", {
-        issueId: "PMT-001",
+        issueId: "NOR-001",
         agentName: "agent-work-1",
       });
 
-      const issue = readIssue(tmpDir, "PMT-001")!;
+      const issue = readIssue(tmpDir, "NOR-001")!;
       expect(issue.assignee).toBe("agent-work-1");
       expect(issue.status).toBe("in-progress");
       expect(issue.started_at).toBeDefined();
@@ -50,15 +50,15 @@ describe("agent lifecycle", () => {
       writeIssue(tmpDir, makeIssue());
       const tool = createAcquireIssueTool(tmpDir);
       await tool.execute("call-1", {
-        issueId: "PMT-001",
+        issueId: "NOR-001",
         agentName: "agent-work-1",
-        worktree: ".worktrees/PMT-001",
-        tmuxSession: "PMT-001",
+        worktree: ".worktrees/NOR-001",
+        tmuxSession: "NOR-001",
       });
 
-      const issue = readIssue(tmpDir, "PMT-001")!;
-      expect(issue.worktree).toBe(".worktrees/PMT-001");
-      expect(issue.tmux_session).toBe("PMT-001");
+      const issue = readIssue(tmpDir, "NOR-001")!;
+      expect(issue.worktree).toBe(".worktrees/NOR-001");
+      expect(issue.tmux_session).toBe("NOR-001");
     });
 
     it("throws if already assigned to different agent", async () => {
@@ -66,7 +66,7 @@ describe("agent lifecycle", () => {
       const tool = createAcquireIssueTool(tmpDir);
       await expect(
         tool.execute("call-1", {
-          issueId: "PMT-001",
+          issueId: "NOR-001",
           agentName: "agent-work-2",
         }),
       ).rejects.toThrow("Issue already assigned to agent-work-1");
@@ -76,20 +76,20 @@ describe("agent lifecycle", () => {
       writeIssue(tmpDir, makeIssue({ assignee: "agent-work-1" }));
       const tool = createAcquireIssueTool(tmpDir);
       const result = await tool.execute("call-1", {
-        issueId: "PMT-001",
+        issueId: "NOR-001",
         agentName: "agent-work-1",
       });
-      expect(result.content[0].text).toContain("PMT-001");
+      expect(result.content[0].text).toContain("NOR-001");
     });
 
     it("throws if issue does not exist", async () => {
       const tool = createAcquireIssueTool(tmpDir);
       await expect(
         tool.execute("call-1", {
-          issueId: "PMT-999",
+          issueId: "NOR-999",
           agentName: "agent-work-1",
         }),
-      ).rejects.toThrow("Issue PMT-999 not found");
+      ).rejects.toThrow("Issue NOR-999 not found");
     });
   });
 
@@ -98,11 +98,11 @@ describe("agent lifecycle", () => {
       writeIssue(tmpDir, makeIssue({ status: "in-progress", assignee: "agent-work-1" }));
       const tool = createCompleteIssueTool(tmpDir);
       await tool.execute("call-1", {
-        issueId: "PMT-001",
+        issueId: "NOR-001",
         summary: "Implemented the feature and added tests",
       });
 
-      const issue = readIssue(tmpDir, "PMT-001")!;
+      const issue = readIssue(tmpDir, "NOR-001")!;
       expect(issue.status).toBe("done");
       expect(issue.comments).toHaveLength(1);
       expect(issue.comments![0].body).toBe("Implemented the feature and added tests");
@@ -113,11 +113,11 @@ describe("agent lifecycle", () => {
       writeIssue(tmpDir, makeIssue({ status: "in-progress" }));
       const tool = createCompleteIssueTool(tmpDir);
       await tool.execute("call-1", {
-        issueId: "PMT-001",
+        issueId: "NOR-001",
         summary: "Done",
       });
 
-      const issue = readIssue(tmpDir, "PMT-001")!;
+      const issue = readIssue(tmpDir, "NOR-001")!;
       expect(issue.comments![0].author).toBe("agent");
     });
 
@@ -125,10 +125,10 @@ describe("agent lifecycle", () => {
       const tool = createCompleteIssueTool(tmpDir);
       await expect(
         tool.execute("call-1", {
-          issueId: "PMT-999",
+          issueId: "NOR-999",
           summary: "Done",
         }),
-      ).rejects.toThrow("Issue PMT-999 not found");
+      ).rejects.toThrow("Issue NOR-999 not found");
     });
   });
 
@@ -137,15 +137,15 @@ describe("agent lifecycle", () => {
       const original = makeIssue({
         assignee: "agent-work-1",
         started_at: "2026-03-01T18:30:00.000Z",
-        worktree: ".worktrees/PMT-001",
-        tmux_session: "PMT-001",
+        worktree: ".worktrees/NOR-001",
+        tmux_session: "NOR-001",
       });
       writeIssue(tmpDir, original);
-      const reloaded = readIssue(tmpDir, "PMT-001")!;
+      const reloaded = readIssue(tmpDir, "NOR-001")!;
       expect(reloaded.assignee).toBe("agent-work-1");
       expect(reloaded.started_at).toBe("2026-03-01T18:30:00.000Z");
-      expect(reloaded.worktree).toBe(".worktrees/PMT-001");
-      expect(reloaded.tmux_session).toBe("PMT-001");
+      expect(reloaded.worktree).toBe(".worktrees/NOR-001");
+      expect(reloaded.tmux_session).toBe("NOR-001");
     });
   });
 });

@@ -7,7 +7,7 @@ import { createSafeBashTool } from "../tools/bash-wrapper.js";
 let tmpDir: string;
 
 beforeEach(() => {
-  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pmtui-bash-test-"));
+  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "north-bash-test-"));
 });
 
 afterEach(() => {

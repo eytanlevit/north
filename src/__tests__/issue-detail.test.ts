@@ -4,7 +4,7 @@ import type { Issue } from "../issues.js";
 
 function makeIssue(overrides: Partial<Issue> = {}): Issue {
   return {
-    id: "ISS-001",
+    id: "NOR-001",
     title: "Implement login page",
     status: "todo",
     priority: "high",
@@ -24,7 +24,7 @@ describe("IssueDetailView", () => {
     const view = new IssueDetailView(makeIssue());
     const lines = view.render(60);
     const topLine = stripAnsi(lines[0]);
-    expect(topLine).toContain("ISS-001");
+    expect(topLine).toContain("NOR-001");
   });
 
   it("renders the issue title", () => {

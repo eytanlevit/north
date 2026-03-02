@@ -3,7 +3,7 @@ import type { AgentTool } from "@mariozechner/pi-agent-core";
 import { readIssue, writeIssue, addComment } from "../issues.js";
 
 const schema = Type.Object({
-  issueId: Type.String({ description: "Issue ID (e.g. PMT-001)" }),
+  issueId: Type.String({ description: "Issue ID (e.g. NOR-001)" }),
   summary: Type.String({ description: "Completion summary describing what was done" }),
 });
 

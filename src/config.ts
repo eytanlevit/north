@@ -12,7 +12,7 @@ export interface ProjectConfig {
 
 export function defaultConfig(): ProjectConfig {
   return {
-    prefix: "ISS",
+    prefix: "NOR",
     name: "My Project",
     description: "",
     statuses: ["todo", "in-progress", "done"],
@@ -50,7 +50,7 @@ export function validateConfig(config: unknown): asserts config is ProjectConfig
 }
 
 export function loadConfig(cwd: string): ProjectConfig {
-  const configPath = path.join(cwd, ".pm", "config.yaml");
+  const configPath = path.join(cwd, ".north", "config.yaml");
   if (!fs.existsSync(configPath)) {
     return defaultConfig();
   }
@@ -68,7 +68,7 @@ export function loadConfig(cwd: string): ProjectConfig {
 }
 
 export function initProject(cwd: string): void {
-  const pmDir = path.join(cwd, ".pm");
+  const pmDir = path.join(cwd, ".north");
   const dirs = [pmDir, path.join(pmDir, "issues"), path.join(pmDir, "docs")];
   for (const dir of dirs) {
     fs.mkdirSync(dir, { recursive: true });

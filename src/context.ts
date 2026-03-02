@@ -23,7 +23,7 @@ export interface ContextResult {
 
 export function buildContext(options: ContextOptions): ContextResult {
   const { cwd, issueId } = options;
-  const pmDir = path.join(cwd, ".pm");
+  const pmDir = path.join(cwd, ".north");
 
   // 1. Read the main issue
   const issue = readIssue(cwd, issueId);

@@ -193,7 +193,7 @@ onIssueChange(() => {
   tui.requestRender();
 });
 
-// Watch .pm/issues/ for external file changes
+// Watch .north/issues/ for external file changes
 const stopWatcher = watchIssueDir(cwd);
 
 // Wire chat submit → session prompt

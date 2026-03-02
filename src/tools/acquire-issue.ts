@@ -3,9 +3,9 @@ import type { AgentTool } from "@mariozechner/pi-agent-core";
 import { readIssue, writeIssue } from "../issues.js";
 
 const schema = Type.Object({
-  issueId: Type.String({ description: "Issue ID (e.g. PMT-001)" }),
+  issueId: Type.String({ description: "Issue ID (e.g. NOR-001)" }),
   agentName: Type.String({ description: "Name of the agent claiming this issue" }),
-  worktree: Type.Optional(Type.String({ description: "Worktree path (e.g. .worktrees/PMT-001)" })),
+  worktree: Type.Optional(Type.String({ description: "Worktree path (e.g. .worktrees/NOR-001)" })),
   tmuxSession: Type.Optional(Type.String({ description: "Tmux session name for this agent" })),
 });
 

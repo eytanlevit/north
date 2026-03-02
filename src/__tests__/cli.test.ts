@@ -10,7 +10,7 @@ describe("CLI", () => {
   let tmpDir: string;
 
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pmtui-cli-test-"));
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "north-cli-test-"));
   });
 
   afterEach(() => {
@@ -38,19 +38,19 @@ describe("CLI", () => {
   // ---- init ---------------------------------------------------------------
 
   describe("init", () => {
-    it("creates .pm/ directory structure", () => {
+    it("creates .north/ directory structure", () => {
       const result = run("init");
       expect(result.status).toBe(0);
       expect(result.stdout).toContain("Initialized");
 
-      expect(fs.existsSync(path.join(tmpDir, ".pm"))).toBe(true);
-      expect(fs.existsSync(path.join(tmpDir, ".pm", "issues"))).toBe(true);
-      expect(fs.existsSync(path.join(tmpDir, ".pm", "docs"))).toBe(true);
-      expect(fs.existsSync(path.join(tmpDir, ".pm", "config.yaml"))).toBe(true);
-      expect(fs.existsSync(path.join(tmpDir, ".pm", "project.md"))).toBe(true);
+      expect(fs.existsSync(path.join(tmpDir, ".north"))).toBe(true);
+      expect(fs.existsSync(path.join(tmpDir, ".north", "issues"))).toBe(true);
+      expect(fs.existsSync(path.join(tmpDir, ".north", "docs"))).toBe(true);
+      expect(fs.existsSync(path.join(tmpDir, ".north", "config.yaml"))).toBe(true);
+      expect(fs.existsSync(path.join(tmpDir, ".north", "project.md"))).toBe(true);
     });
 
-    it("fails if .pm/ already exists", () => {
+    it("fails if .north/ already exists", () => {
       run("init");
       const result = run("init");
       expect(result.status).toBe(1);
@@ -71,13 +71,13 @@ describe("CLI", () => {
 
       // stdout is non-TTY in tests, so output is JSON
       const issue = JSON.parse(result.stdout);
-      expect(issue.id).toBe("ISS-001");
+      expect(issue.id).toBe("NOR-001");
       expect(issue.title).toBe("My first issue");
       expect(issue.status).toBe("todo");
       expect(issue.priority).toBe("medium");
 
       // File should exist on disk
-      const issuePath = path.join(tmpDir, ".pm", "issues", "ISS-001.md");
+      const issuePath = path.join(tmpDir, ".north", "issues", "NOR-001.md");
       expect(fs.existsSync(issuePath)).toBe(true);
     });
 
@@ -93,13 +93,13 @@ describe("CLI", () => {
       run("create", "First");
       const result = run("create", "Second");
       const issue = JSON.parse(result.stdout);
-      expect(issue.id).toBe("ISS-002");
+      expect(issue.id).toBe("NOR-002");
     });
 
     it("uses prefix from config.yaml", () => {
       // Override config with custom prefix
-      const configPath = path.join(tmpDir, ".pm", "config.yaml");
-      const config = fs.readFileSync(configPath, "utf-8").replace("prefix: ISS", "prefix: TASK");
+      const configPath = path.join(tmpDir, ".north", "config.yaml");
+      const config = fs.readFileSync(configPath, "utf-8").replace("prefix: NOR", "prefix: TASK");
       fs.writeFileSync(configPath, config, "utf-8");
 
       const result = run("create", "Custom prefix issue");
@@ -108,7 +108,7 @@ describe("CLI", () => {
       expect(issue.id).toBe("TASK-001");
 
       // File should exist with the custom prefix
-      expect(fs.existsSync(path.join(tmpDir, ".pm", "issues", "TASK-001.md"))).toBe(true);
+      expect(fs.existsSync(path.join(tmpDir, ".north", "issues", "TASK-001.md"))).toBe(true);
     });
   });
 
@@ -156,10 +156,10 @@ describe("CLI", () => {
     });
 
     it("shows issue details as JSON", () => {
-      const result = run("show", "ISS-001", "--json");
+      const result = run("show", "NOR-001", "--json");
       expect(result.status).toBe(0);
       const issue = JSON.parse(result.stdout);
-      expect(issue.id).toBe("ISS-001");
+      expect(issue.id).toBe("NOR-001");
       expect(issue.title).toBe("Test issue");
       expect(issue.body).toBe("Some details");
     });
@@ -168,7 +168,7 @@ describe("CLI", () => {
       const result = run("show", "1", "--json");
       expect(result.status).toBe(0);
       const issue = JSON.parse(result.stdout);
-      expect(issue.id).toBe("ISS-001");
+      expect(issue.id).toBe("NOR-001");
     });
 
     it("returns error for non-existent issue", () => {
@@ -187,7 +187,7 @@ describe("CLI", () => {
     });
 
     it("updates issue fields", () => {
-      const result = run("update", "ISS-001", "--title", "New title", "--status", "done", "--priority", "high");
+      const result = run("update", "NOR-001", "--title", "New title", "--status", "done", "--priority", "high");
       expect(result.status).toBe(0);
 
       const showResult = run("show", "1", "--json");
@@ -235,7 +235,7 @@ describe("CLI", () => {
     it("prints help with --help flag", () => {
       const result = run("--help");
       expect(result.status).toBe(0);
-      expect(result.stdout).toContain("pmtui");
+      expect(result.stdout).toContain("north");
       expect(result.stdout).toContain("Commands:");
     });
   });

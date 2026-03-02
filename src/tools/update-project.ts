@@ -11,7 +11,7 @@ const schema = Type.Object({
   description: Type.Optional(Type.String({ description: "Short project description" })),
   statuses: Type.Optional(Type.Array(Type.String(), { description: "Ordered list of statuses" })),
   priorities: Type.Optional(Type.Array(Type.String(), { description: "Ordered list of priorities" })),
-  project_md: Type.Optional(Type.String({ description: "Content for .pm/project.md" })),
+  project_md: Type.Optional(Type.String({ description: "Content for .north/project.md" })),
 });
 
 export function createUpdateProjectTool(cwd: string): AgentTool<typeof schema> {
@@ -45,13 +45,13 @@ export function createUpdateProjectTool(cwd: string): AgentTool<typeof schema> {
         updated.push("priorities");
       }
 
-      const configPath = path.join(cwd, ".pm", "config.yaml");
+      const configPath = path.join(cwd, ".north", "config.yaml");
       const configTmp = configPath + ".tmp";
       fs.writeFileSync(configTmp, stringify(config), "utf-8");
       fs.renameSync(configTmp, configPath);
 
       if (params.project_md !== undefined) {
-        const projectMdPath = path.join(cwd, ".pm", "project.md");
+        const projectMdPath = path.join(cwd, ".north", "project.md");
         const mdTmp = projectMdPath + ".tmp";
         fs.writeFileSync(mdTmp, params.project_md, "utf-8");
         fs.renameSync(mdTmp, projectMdPath);

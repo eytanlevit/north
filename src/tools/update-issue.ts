@@ -4,15 +4,15 @@ import { readIssue, writeIssue, type Status, type Priority } from "../issues.js"
 import type { ProjectConfig } from "../config.js";
 
 const schema = Type.Object({
-  id: Type.String({ description: "Issue ID (e.g. ISS-001)" }),
+  id: Type.String({ description: "Issue ID (e.g. NOR-001)" }),
   title: Type.Optional(Type.String({ description: "New title" })),
   status: Type.Optional(Type.String({ description: "New status. Valid values come from project config." })),
   priority: Type.Optional(Type.String({ description: "New priority. Valid values come from project config." })),
   body: Type.Optional(Type.String({ description: "New body" })),
-  parent: Type.Optional(Type.String({ description: "Parent issue ID (e.g. ISS-001)" })),
+  parent: Type.Optional(Type.String({ description: "Parent issue ID (e.g. NOR-001)" })),
   blocked_by: Type.Optional(Type.Array(Type.String(), { description: "Issue IDs that block this issue" })),
   labels: Type.Optional(Type.Array(Type.String(), { description: "Labels (e.g. auth, backend)" })),
-  docs: Type.Optional(Type.Array(Type.String(), { description: "Paths to linked docs relative to .pm/ (e.g. docs/prd.md)" })),
+  docs: Type.Optional(Type.Array(Type.String(), { description: "Paths to linked docs relative to .north/ (e.g. docs/prd.md)" })),
 });
 
 export function createUpdateIssueTool(cwd: string, config: ProjectConfig): AgentTool<typeof schema> {

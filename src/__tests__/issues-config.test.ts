@@ -7,7 +7,7 @@ import { writeIssue, readIssue, nextId, type Issue } from "../issues.js";
 let tmpDir: string;
 
 beforeEach(() => {
-  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pmtui-issues-cfg-test-"));
+  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "north-issues-cfg-test-"));
 });
 
 afterEach(() => {
@@ -38,7 +38,7 @@ describe("custom statuses", () => {
 describe("custom priorities", () => {
   it("writes and reads back issues with custom priorities", () => {
     const issue: Issue = {
-      id: "ISS-001",
+      id: "NOR-001",
       title: "Custom priority issue",
       status: "todo",
       priority: "critical",
@@ -47,7 +47,7 @@ describe("custom priorities", () => {
     };
 
     writeIssue(tmpDir, issue);
-    const loaded = readIssue(tmpDir, "ISS-001");
+    const loaded = readIssue(tmpDir, "NOR-001");
 
     expect(loaded).not.toBeNull();
     expect(loaded!.priority).toBe("critical");
@@ -56,13 +56,13 @@ describe("custom priorities", () => {
 
 describe("format_version backward compat", () => {
   it("parses old issues without format_version", () => {
-    const dir = path.join(tmpDir, ".pm", "issues");
+    const dir = path.join(tmpDir, ".north", "issues");
     fs.mkdirSync(dir, { recursive: true });
 
     // Write an old-format issue file (no format_version)
     const oldFormat = [
       "---",
-      "id: ISS-001",
+      "id: NOR-001",
       "title: Old issue",
       "status: todo",
       "priority: high",
@@ -72,11 +72,11 @@ describe("format_version backward compat", () => {
       "",
     ].join("\n");
 
-    fs.writeFileSync(path.join(dir, "ISS-001.md"), oldFormat, "utf-8");
+    fs.writeFileSync(path.join(dir, "NOR-001.md"), oldFormat, "utf-8");
 
-    const issue = readIssue(tmpDir, "ISS-001");
+    const issue = readIssue(tmpDir, "NOR-001");
     expect(issue).not.toBeNull();
-    expect(issue!.id).toBe("ISS-001");
+    expect(issue!.id).toBe("NOR-001");
     expect(issue!.title).toBe("Old issue");
     expect(issue!.status).toBe("todo");
     expect(issue!.priority).toBe("high");
@@ -84,13 +84,13 @@ describe("format_version backward compat", () => {
   });
 
   it("parses issues with format_version and strips it", () => {
-    const dir = path.join(tmpDir, ".pm", "issues");
+    const dir = path.join(tmpDir, ".north", "issues");
     fs.mkdirSync(dir, { recursive: true });
 
     const newFormat = [
       "---",
       "format_version: 1",
-      "id: ISS-002",
+      "id: NOR-002",
       "title: New issue",
       "status: done",
       "priority: low",
@@ -100,11 +100,11 @@ describe("format_version backward compat", () => {
       "",
     ].join("\n");
 
-    fs.writeFileSync(path.join(dir, "ISS-002.md"), newFormat, "utf-8");
+    fs.writeFileSync(path.join(dir, "NOR-002.md"), newFormat, "utf-8");
 
-    const issue = readIssue(tmpDir, "ISS-002");
+    const issue = readIssue(tmpDir, "NOR-002");
     expect(issue).not.toBeNull();
-    expect(issue!.id).toBe("ISS-002");
+    expect(issue!.id).toBe("NOR-002");
     expect(issue!.title).toBe("New issue");
     // format_version should not appear on the Issue object
     expect((issue as unknown as Record<string, unknown>)["format_version"]).toBeUndefined();
@@ -112,7 +112,7 @@ describe("format_version backward compat", () => {
 
   it("newly serialized issues include format_version", () => {
     const issue: Issue = {
-      id: "ISS-003",
+      id: "NOR-003",
       title: "Serialized issue",
       status: "todo",
       priority: "medium",
@@ -123,7 +123,7 @@ describe("format_version backward compat", () => {
     writeIssue(tmpDir, issue);
 
     const raw = fs.readFileSync(
-      path.join(tmpDir, ".pm", "issues", "ISS-003.md"),
+      path.join(tmpDir, ".north", "issues", "NOR-003.md"),
       "utf-8",
     );
     expect(raw).toContain("format_version: 1");
@@ -137,7 +137,7 @@ describe("nextId with custom prefix", () => {
   });
 
   it("increments correctly with custom prefix", () => {
-    const dir = path.join(tmpDir, ".pm", "issues");
+    const dir = path.join(tmpDir, ".north", "issues");
     fs.mkdirSync(dir, { recursive: true });
 
     // Create a couple issues with custom prefix
@@ -148,8 +148,8 @@ describe("nextId with custom prefix", () => {
     expect(id).toBe("PROJ-006");
   });
 
-  it("defaults to ISS prefix when none provided", () => {
+  it("defaults to NOR prefix when none provided", () => {
     const id = nextId(tmpDir);
-    expect(id).toBe("ISS-001");
+    expect(id).toBe("NOR-001");
   });
 });

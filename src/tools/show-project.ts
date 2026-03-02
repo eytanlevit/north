@@ -14,7 +14,7 @@ export function createShowProjectTool(cwd: string): AgentTool<typeof schema> {
     parameters: schema,
     execute: async (_toolCallId, _params) => {
       const config = loadConfig(cwd);
-      const projectMdPath = path.join(cwd, ".pm", "project.md");
+      const projectMdPath = path.join(cwd, ".north", "project.md");
       let projectMd: string | undefined;
       if (fs.existsSync(projectMdPath)) {
         projectMd = fs.readFileSync(projectMdPath, "utf-8");

@@ -133,7 +133,7 @@ export class ProjectDetailView implements Component {
     }
 
     // Project.md content
-    const projectMdPath = path.join(this.cwd, ".pm", "project.md");
+    const projectMdPath = path.join(this.cwd, ".north", "project.md");
     if (fs.existsSync(projectMdPath)) {
       const mdContent = fs.readFileSync(projectMdPath, "utf-8").trim();
       if (mdContent) {

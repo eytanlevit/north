@@ -47,16 +47,16 @@ export async function createPMSession(
 - Manage issue relationships: set parent issues and blocked_by dependencies
 - Tag issues with labels for categorization
 - Show and update project configuration (name, prefix, description, statuses, priorities)
-- Show and update project notes (.pm/project.md)
+- Show and update project notes (.north/project.md)
 - Ask clarifying questions before creating issues when requirements are vague
 - Explore the codebase to create technically-informed issues (use read, grep, find tools)
 - Claim issues with acquire_issue before working on them
 - Mark issues done with complete_issue when finished (must provide a summary)
 
 ## Project structure
-- .pm/config.yaml — project configuration (name, prefix, statuses, priorities)
-- .pm/project.md — project notes and description
-- .pm/issues/{PREFIX}-NNN.md — issue files
+- .north/config.yaml — project configuration (name, prefix, statuses, priorities)
+- .north/project.md — project notes and description
+- .north/issues/{PREFIX}-NNN.md — issue files
 
 ## Project configuration
 - Issue prefix: ${config.prefix}

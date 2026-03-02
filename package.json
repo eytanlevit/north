@@ -1,6 +1,6 @@
 {
-  "name": "pmtui",
-  "version": "0.1.0",
+  "name": "north",
+  "version": "1.0.0",
   "type": "module",
   "private": true,
   "scripts": {
@@ -10,7 +10,7 @@
     "test": "vitest run"
   },
   "bin": {
-    "pmtui": "./dist/cli.js"
+    "north": "./dist/cli.js"
   },
   "files": [
     "dist"

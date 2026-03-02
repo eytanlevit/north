@@ -9,7 +9,7 @@ let tmpDir: string;
 
 function makeIssue(overrides: Partial<Issue> = {}): Issue {
   return {
-    id: "ISS-001",
+    id: "NOR-001",
     title: "First issue",
     status: "todo",
     priority: "high",
@@ -20,7 +20,7 @@ function makeIssue(overrides: Partial<Issue> = {}): Issue {
 }
 
 beforeEach(() => {
-  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pmtui-test-"));
+  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "north-test-"));
 });
 
 afterEach(() => {
@@ -41,13 +41,13 @@ function stripAnsi(str: string): string {
 describe("KanbanPane selection", () => {
   it("getSelectedIssue returns first issue by default", () => {
     setupIssues([
-      makeIssue({ id: "ISS-001", title: "First", status: "todo" }),
-      makeIssue({ id: "ISS-002", title: "Second", status: "todo" }),
+      makeIssue({ id: "NOR-001", title: "First", status: "todo" }),
+      makeIssue({ id: "NOR-002", title: "Second", status: "todo" }),
     ]);
     const pane = new KanbanPane(tmpDir);
     const selected = pane.getSelectedIssue();
     expect(selected).not.toBeNull();
-    expect(selected!.id).toBe("ISS-001");
+    expect(selected!.id).toBe("NOR-001");
   });
 
   it("getSelectedIssue returns null when no issues exist", () => {
@@ -57,55 +57,55 @@ describe("KanbanPane selection", () => {
 
   it("cursor navigation moves through issues", () => {
     setupIssues([
-      makeIssue({ id: "ISS-001", title: "First", status: "todo" }),
-      makeIssue({ id: "ISS-002", title: "Second", status: "todo" }),
-      makeIssue({ id: "ISS-003", title: "Third", status: "in-progress" }),
+      makeIssue({ id: "NOR-001", title: "First", status: "todo" }),
+      makeIssue({ id: "NOR-002", title: "Second", status: "todo" }),
+      makeIssue({ id: "NOR-003", title: "Third", status: "in-progress" }),
     ]);
     const pane = new KanbanPane(tmpDir);
 
     // Initial selection is first issue
-    expect(pane.getSelectedIssue()!.id).toBe("ISS-001");
+    expect(pane.getSelectedIssue()!.id).toBe("NOR-001");
 
     // Move down
     pane.handleInput("j");
-    expect(pane.getSelectedIssue()!.id).toBe("ISS-002");
+    expect(pane.getSelectedIssue()!.id).toBe("NOR-002");
 
     // Move down again - crosses into next section
     pane.handleInput("j");
-    expect(pane.getSelectedIssue()!.id).toBe("ISS-003");
+    expect(pane.getSelectedIssue()!.id).toBe("NOR-003");
 
     // Move up
     pane.handleInput("k");
-    expect(pane.getSelectedIssue()!.id).toBe("ISS-002");
+    expect(pane.getSelectedIssue()!.id).toBe("NOR-002");
   });
 
   it("cursor does not go below the last issue", () => {
     setupIssues([
-      makeIssue({ id: "ISS-001", title: "Only", status: "todo" }),
+      makeIssue({ id: "NOR-001", title: "Only", status: "todo" }),
     ]);
     const pane = new KanbanPane(tmpDir);
 
     pane.handleInput("j");
     pane.handleInput("j");
     pane.handleInput("j");
-    expect(pane.getSelectedIssue()!.id).toBe("ISS-001");
+    expect(pane.getSelectedIssue()!.id).toBe("NOR-001");
   });
 
   it("cursor does not go above the first issue", () => {
     setupIssues([
-      makeIssue({ id: "ISS-001", title: "Only", status: "todo" }),
+      makeIssue({ id: "NOR-001", title: "Only", status: "todo" }),
     ]);
     const pane = new KanbanPane(tmpDir);
 
     pane.handleInput("k");
     pane.handleInput("k");
-    expect(pane.getSelectedIssue()!.id).toBe("ISS-001");
+    expect(pane.getSelectedIssue()!.id).toBe("NOR-001");
   });
 
   it("Enter triggers onSelectIssue callback with the selected issue", () => {
     setupIssues([
-      makeIssue({ id: "ISS-001", title: "First", status: "todo" }),
-      makeIssue({ id: "ISS-002", title: "Second", status: "todo" }),
+      makeIssue({ id: "NOR-001", title: "First", status: "todo" }),
+      makeIssue({ id: "NOR-002", title: "Second", status: "todo" }),
     ]);
     const pane = new KanbanPane(tmpDir);
     const callback = vi.fn();
@@ -116,7 +116,7 @@ describe("KanbanPane selection", () => {
     pane.handleInput("\r"); // Enter key
 
     expect(callback).toHaveBeenCalledOnce();
-    expect(callback.mock.calls[0][0].id).toBe("ISS-002");
+    expect(callback.mock.calls[0][0].id).toBe("NOR-002");
   });
 
   it("Enter does nothing when no issues exist", () => {
@@ -130,8 +130,8 @@ describe("KanbanPane selection", () => {
 
   it("shows selection indicator when focused", () => {
     setupIssues([
-      makeIssue({ id: "ISS-001", title: "First", status: "todo" }),
-      makeIssue({ id: "ISS-002", title: "Second", status: "todo" }),
+      makeIssue({ id: "NOR-001", title: "First", status: "todo" }),
+      makeIssue({ id: "NOR-002", title: "Second", status: "todo" }),
     ]);
     const pane = new KanbanPane(tmpDir);
     pane.focused = true;
@@ -140,52 +140,52 @@ describe("KanbanPane selection", () => {
     const plainLines = lines.map(stripAnsi);
 
     // The selected issue (first one) should have the selection indicator
-    const selectedLine = plainLines.find((l) => l.includes("\u25B8") && l.includes("ISS-001"));
+    const selectedLine = plainLines.find((l) => l.includes("\u25B8") && l.includes("NOR-001"));
     expect(selectedLine).toBeDefined();
 
     // The non-selected issue should not have the selection indicator
-    const otherLine = plainLines.find((l) => l.includes("ISS-002"));
+    const otherLine = plainLines.find((l) => l.includes("NOR-002"));
     expect(otherLine).toBeDefined();
-    // ISS-002 line should not have the selection indicator
-    expect(otherLine!.includes("\u25B8") && otherLine!.includes("ISS-002")).toBe(false);
+    // NOR-002 line should not have the selection indicator
+    expect(otherLine!.includes("\u25B8") && otherLine!.includes("NOR-002")).toBe(false);
   });
 
   it("getAllIssues returns issues in section order", () => {
     setupIssues([
-      makeIssue({ id: "ISS-001", status: "done" }),
-      makeIssue({ id: "ISS-002", status: "todo" }),
-      makeIssue({ id: "ISS-003", status: "in-progress" }),
+      makeIssue({ id: "NOR-001", status: "done" }),
+      makeIssue({ id: "NOR-002", status: "todo" }),
+      makeIssue({ id: "NOR-003", status: "in-progress" }),
     ]);
     const pane = new KanbanPane(tmpDir);
     const all = pane.getAllIssues();
 
     // Order should be: todo, in-progress, done (matching SECTIONS order)
-    expect(all[0].id).toBe("ISS-002"); // todo
-    expect(all[1].id).toBe("ISS-003"); // in-progress
-    expect(all[2].id).toBe("ISS-001"); // done
+    expect(all[0].id).toBe("NOR-002"); // todo
+    expect(all[1].id).toBe("NOR-003"); // in-progress
+    expect(all[2].id).toBe("NOR-001"); // done
   });
 
   it("refresh clamps cursor when issues are removed", () => {
     setupIssues([
-      makeIssue({ id: "ISS-001", status: "todo" }),
-      makeIssue({ id: "ISS-002", status: "todo" }),
-      makeIssue({ id: "ISS-003", status: "todo" }),
+      makeIssue({ id: "NOR-001", status: "todo" }),
+      makeIssue({ id: "NOR-002", status: "todo" }),
+      makeIssue({ id: "NOR-003", status: "todo" }),
     ]);
     const pane = new KanbanPane(tmpDir);
 
     // Move cursor to last issue
     pane.handleInput("j");
     pane.handleInput("j");
-    expect(pane.getSelectedIssue()!.id).toBe("ISS-003");
+    expect(pane.getSelectedIssue()!.id).toBe("NOR-003");
 
     // Remove some issues and refresh
-    fs.unlinkSync(path.join(tmpDir, ".pm", "issues", "ISS-002.md"));
-    fs.unlinkSync(path.join(tmpDir, ".pm", "issues", "ISS-003.md"));
+    fs.unlinkSync(path.join(tmpDir, ".north", "issues", "NOR-002.md"));
+    fs.unlinkSync(path.join(tmpDir, ".north", "issues", "NOR-003.md"));
     pane.refresh();
 
     // Cursor should be clamped to last available issue
     const selected = pane.getSelectedIssue();
     expect(selected).not.toBeNull();
-    expect(selected!.id).toBe("ISS-001");
+    expect(selected!.id).toBe("NOR-001");
   });
 });
