@@ -356,7 +356,9 @@ tui.addInputListener((data: string) => {
       log(`hasImage() = ${imageAvailable}`);
 
       if (imageAvailable) {
-        getImageBase64().then((base64Data) => {
+        getImageBase64().then((raw) => {
+          // Normalize base64 padding (clipboard lib may omit '=' padding)
+          const base64Data = raw + "=".repeat((4 - (raw.length % 4)) % 4);
           log(`getImageBase64() success, length=${base64Data.length}`);
           chatPane.addPendingImage(base64Data, "image/png");
           tui.requestRender();
