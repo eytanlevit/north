@@ -462,9 +462,24 @@ try {
     case "help":
     case "--help":
     case "-h":
-    case undefined:
       printHelp();
       break;
+    case undefined: {
+      // No args: launch TUI if project exists, otherwise run init
+      let hasProject = false;
+      try {
+        findProjectRoot();
+        hasProject = true;
+      } catch {
+        // no .north/ found
+      }
+      if (hasProject) {
+        await import("./index.js");
+      } else {
+        await cmdInit();
+      }
+      break;
+    }
     default:
       console.error(`Unknown command: ${command}\n`);
       printHelp();
