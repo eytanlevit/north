@@ -328,11 +328,11 @@ tui.addInputListener((data: string) => {
   // Filter out key release events (Kitty protocol sends both press + release)
   if (isKeyRelease(data)) return { consume: true };
 
-  // Debug: log raw key data for clipboard investigation
-  if (data.includes("\x16")) {
+  // Debug: log ALL key data for clipboard investigation (temporary)
+  {
     const logPath = path.join(os.homedir(), ".north", "clipboard-debug.log");
     try {
-      fs.appendFileSync(logPath, `[${new Date().toISOString()}] Raw input detected: ${JSON.stringify(data)} (hex: ${Buffer.from(data).toString("hex")})\n`);
+      fs.appendFileSync(logPath, `[${new Date().toISOString()}] key: ${JSON.stringify(data)} hex: ${Buffer.from(data).toString("hex")} matchesCtrlV: ${matchesKey(data, "ctrl+v")}\n`);
     } catch {}
   }
 
@@ -422,6 +422,22 @@ tui.addInputListener((data: string) => {
     }
     tui.requestRender();
     return { consume: true };
+  }
+
+  // When chat is focused: intercept image bar navigation before editor gets it
+  if (chatPane.focused) {
+    if (chatPane.isImageSelectMode()) {
+      // Route all input to chatPane for image bar navigation
+      chatPane.handleInput(data);
+      tui.requestRender();
+      return { consume: true };
+    }
+    // Up arrow enters image select mode when images are pending
+    if (chatPane.pendingImageCount > 0 && matchesKey(data, "up")) {
+      chatPane.enterImageSelectMode();
+      tui.requestRender();
+      return { consume: true };
+    }
   }
 
   // When kanban is focused, route input to it
