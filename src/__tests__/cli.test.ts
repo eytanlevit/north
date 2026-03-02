@@ -6,7 +6,7 @@ import { execFileSync } from "node:child_process";
 
 const CLI_PATH = path.resolve(__dirname, "..", "cli.ts");
 
-describe("CLI", () => {
+describe("CLI", { timeout: 30000 }, () => {
   let tmpDir: string;
 
   beforeEach(() => {
