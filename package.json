@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx src/index.ts",
     "cli": "tsx src/cli.ts",
-    "build": "tsc",
+    "build": "tsc; cp -r src/skills dist/skills",
     "test": "vitest run"
   },
   "bin": {

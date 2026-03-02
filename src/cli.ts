@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import { createInterface } from "node:readline/promises";
+import { fileURLToPath } from "node:url";
+import { execSync } from "node:child_process";
 import { stringify, parse } from "yaml";
 import { findProjectRoot } from "./project-root.js";
 import {
@@ -118,7 +121,22 @@ function validatePriority(p: string): Priority {
 
 // ---- init -----------------------------------------------------------------
 
-function cmdInit() {
+function getDefaultPrefix(): string {
+  // Try git repo name first, fall back to folder name
+  let dirName: string;
+  try {
+    const toplevel = execSync("git rev-parse --show-toplevel", {
+      encoding: "utf-8",
+      stdio: ["pipe", "pipe", "pipe"],
+    }).trim();
+    dirName = path.basename(toplevel);
+  } catch {
+    dirName = path.basename(process.cwd());
+  }
+  return dirName.slice(0, 3).toUpperCase();
+}
+
+async function cmdInit() {
   const cwd = process.cwd();
   const pmDir = path.join(cwd, ".north");
 
@@ -127,11 +145,30 @@ function cmdInit() {
     process.exit(1);
   }
 
+  const defaultPrefix = getDefaultPrefix();
+  let prefix = defaultPrefix;
+  let installCC = true;
+
+  if (process.stdin.isTTY) {
+    const rl = createInterface({ input: process.stdin, output: process.stdout });
+
+    // 1. Prefix prompt
+    const rawPrefix = await rl.question(`Issue prefix (${defaultPrefix}): `);
+    prefix = rawPrefix.trim() ? rawPrefix.trim().toUpperCase() : defaultPrefix;
+
+    // 2. Claude Code integration prompt
+    const ccAnswer = await rl.question("Install Claude Code skill + CLAUDE.md instructions? (Y/n): ");
+    installCC = ccAnswer.trim().toLowerCase() !== "n";
+
+    rl.close();
+  }
+
+  // Create project directories
   fs.mkdirSync(path.join(pmDir, "issues"), { recursive: true });
   fs.mkdirSync(path.join(pmDir, "docs"), { recursive: true });
 
   const config = {
-    prefix: "NOR",
+    prefix,
     name: "",
     description: "",
     statuses: ["todo", "in-progress", "done"],
@@ -147,6 +184,40 @@ function cmdInit() {
   const tmpProject = projectMd + ".tmp";
   fs.writeFileSync(tmpProject, "# Project\n\nDescribe your project here.\n", "utf-8");
   fs.renameSync(tmpProject, projectMd);
+
+  // Claude Code integration
+  if (installCC) {
+    // Copy north-cli.md skill
+    const srcSkill = path.join(
+      path.dirname(fileURLToPath(import.meta.url)),
+      "skills",
+      "north-cli.md"
+    );
+    const destSkillDir = path.join(cwd, ".claude", "skills");
+    fs.mkdirSync(destSkillDir, { recursive: true });
+    const destSkill = path.join(destSkillDir, "north-cli.md");
+    fs.copyFileSync(srcSkill, destSkill);
+
+    // Append to CLAUDE.md if section doesn't exist
+    const claudeMdPath = path.join(cwd, "CLAUDE.md");
+    const section = `## Issues & Project Management
+
+When working with issues (creating, listing, updating, showing, commenting), use the \`north\` CLI.
+Refer to the \`.claude/skills/north-cli.md\` skill for full CLI usage, project structure, and issue file format.`;
+
+    let existing = "";
+    if (fs.existsSync(claudeMdPath)) {
+      existing = fs.readFileSync(claudeMdPath, "utf-8");
+    }
+    if (!existing.includes("## Issues & Project Management")) {
+      const content = existing ? existing.trimEnd() + "\n\n" + section + "\n" : section + "\n";
+      const tmpClaude = claudeMdPath + ".tmp";
+      fs.writeFileSync(tmpClaude, content, "utf-8");
+      fs.renameSync(tmpClaude, claudeMdPath);
+    }
+
+    console.log("Installed .claude/skills/north-cli.md and updated CLAUDE.md");
+  }
 
   console.log("Initialized north project in .north/");
 }
@@ -367,40 +438,42 @@ Notes:
 // Main dispatch
 // ---------------------------------------------------------------------------
 
-try {
-  switch (command) {
-    case "init":
-      cmdInit();
-      break;
-    case "create":
-      cmdCreate();
-      break;
-    case "list":
-    case "ls":
-      cmdList();
-      break;
-    case "show":
-      cmdShow();
-      break;
-    case "update":
-      cmdUpdate();
-      break;
-    case "comment":
-      cmdComment();
-      break;
-    case "help":
-    case "--help":
-    case "-h":
-    case undefined:
-      printHelp();
-      break;
-    default:
-      console.error(`Unknown command: ${command}\n`);
-      printHelp();
-      process.exit(1);
+(async () => {
+  try {
+    switch (command) {
+      case "init":
+        await cmdInit();
+        break;
+      case "create":
+        cmdCreate();
+        break;
+      case "list":
+      case "ls":
+        cmdList();
+        break;
+      case "show":
+        cmdShow();
+        break;
+      case "update":
+        cmdUpdate();
+        break;
+      case "comment":
+        cmdComment();
+        break;
+      case "help":
+      case "--help":
+      case "-h":
+      case undefined:
+        printHelp();
+        break;
+      default:
+        console.error(`Unknown command: ${command}\n`);
+        printHelp();
+        process.exit(1);
+    }
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(`Error: ${message}`);
+    process.exit(1);
   }
-} catch (err: unknown) {
-  const message = err instanceof Error ? err.message : String(err);
-  console.error(`Error: ${message}`);
-  process.exit(1);
-}
+})();
