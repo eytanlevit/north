@@ -365,14 +365,11 @@ export class ChatPane implements Component, Focusable {
       }
     }
 
-    // Up arrow enters image select mode when images are pending and editor is empty
+    // Up arrow enters image select mode when images are pending
     if (!this._imageSelectMode && this._pendingImages.length > 0 && matchesKey(data, "up")) {
-      const text = this._editor.getText();
-      if (!text || text === "") {
-        this.enterImageSelectMode();
-        this.tui.requestRender();
-        return;
-      }
+      this.enterImageSelectMode();
+      this.tui.requestRender();
+      return;
     }
 
     // All other input goes to the editor
