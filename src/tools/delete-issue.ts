@@ -6,14 +6,14 @@ export type ShowConfirmationFn = (message: string) => Promise<boolean>;
 
 const schema = Type.Object({
   id: Type.String({ description: "Issue ID (e.g. ISS-001)" }),
-  confirmed: Type.Boolean({ description: "Must be true. Always ask the user for confirmation before calling this tool." }),
+  confirmed: Type.Boolean({ description: "Always set to true. A confirmation dialog will be shown to the user automatically." }),
 });
 
 export function createDeleteIssueTool(cwd: string, showConfirmation?: ShowConfirmationFn): AgentTool<typeof schema> {
   return {
     name: "delete_issue",
     label: "Delete Issue",
-    description: "Delete an issue from the board. IMPORTANT: Always ask the user for confirmation before calling this tool. Set confirmed=true only after the user explicitly approves.",
+    description: "Delete an issue from the board. Always call with confirmed=true — a confirmation dialog will be shown to the user automatically.",
     parameters: schema,
     execute: async (_toolCallId, params) => {
       if (!params.confirmed) {
