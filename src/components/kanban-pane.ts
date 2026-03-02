@@ -37,6 +37,7 @@ export class KanbanPane implements Component {
   private sections: Section[];
   private cursorIndex = 0;
   private scrollOffset = 0;
+  private lastLinesCount = 0;
   focused = false;
   headerSelected = false;
   onSelectIssue?: (issue: Issue) => void;
@@ -84,8 +85,31 @@ export class KanbanPane implements Component {
 
   /** Scroll viewport by delta lines (positive = down, negative = up) */
   scrollBy(delta: number): void {
-    this.scrollOffset += delta;
-    if (this.scrollOffset < 0) this.scrollOffset = 0;
+    const viewportHeight = (process.stdout.rows || 24) - 1;
+    const maxOffset = Math.max(0, this.lastLinesCount - viewportHeight);
+    this.scrollOffset = Math.max(0, Math.min(this.scrollOffset + delta, maxOffset));
+
+    // Move cursor into viewport so cursor-follow doesn't snap back
+    if (this.issueLineIndices.length > 0) {
+      const cursorLine = this.issueLineIndices[this.cursorIndex] ?? 0;
+      if (cursorLine < this.scrollOffset) {
+        for (let i = 0; i < this.issueLineIndices.length; i++) {
+          if (this.issueLineIndices[i] >= this.scrollOffset) {
+            this.cursorIndex = i;
+            this.headerSelected = false;
+            break;
+          }
+        }
+      } else if (cursorLine >= this.scrollOffset + viewportHeight) {
+        for (let i = this.issueLineIndices.length - 1; i >= 0; i--) {
+          if (this.issueLineIndices[i] < this.scrollOffset + viewportHeight) {
+            this.cursorIndex = i;
+            break;
+          }
+        }
+      }
+    }
+
     this.cachedLines = undefined;
     this.cachedWidth = undefined;
   }
@@ -184,6 +208,8 @@ export class KanbanPane implements Component {
       }
     }
 
+    this.lastLinesCount = lines.length;
+
     // Apply scrolling: keep cursor in view
     const cursorLine = this.issueLineIndices[this.cursorIndex] ?? 0;
     // Reserve 1 line at bottom for scroll indicator
@@ -192,7 +218,7 @@ export class KanbanPane implements Component {
     if (cursorLine < this.scrollOffset) {
       this.scrollOffset = cursorLine;
     } else if (cursorLine + 1 >= this.scrollOffset + viewportHeight) {
-      this.scrollOffset = cursorLine - viewportHeight + 2;
+      this.scrollOffset = cursorLine - viewportHeight + 1;
     }
     // Clamp scroll offset
     this.scrollOffset = Math.max(0, Math.min(this.scrollOffset, Math.max(0, lines.length - viewportHeight)));

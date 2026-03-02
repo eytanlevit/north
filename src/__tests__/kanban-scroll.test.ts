@@ -222,6 +222,96 @@ describe("KanbanPane scrolling", () => {
     });
   });
 
+  describe("mouse scroll via scrollBy", () => {
+    // 20 issues, viewport = 6 (5 visible + 1 indicator)
+    const VIEWPORT_ROWS = 6;
+    const ISSUE_COUNT = 20;
+
+    beforeEach(() => {
+      const issues: Partial<Issue>[] = [];
+      for (let i = 1; i <= ISSUE_COUNT; i++) {
+        issues.push({
+          id: `NOR-${String(i).padStart(3, "0")}`,
+          title: `Issue ${i}`,
+          status: "todo",
+          priority: "medium",
+        });
+      }
+      pane = createPaneWithIssues(issues);
+      pane.focused = true;
+      Object.defineProperty(process.stdout, "rows", {
+        value: VIEWPORT_ROWS,
+        writable: true,
+        configurable: true,
+      });
+      // Initial render to populate issueLineIndices and lastLinesCount
+      pane.render(40);
+    });
+
+    it("scrollBy down doesn't snap back to cursor", () => {
+      // Cursor stays at NOR-001 (line ~4). Scroll down by 5.
+      pane.scrollBy(5);
+      const lines = pane.render(40);
+      // After scrolling, NOR-001 should NOT be visible (it's above viewport)
+      const joined = lines.join("\n");
+      expect(joined).not.toContain("NOR-001");
+    });
+
+    it("scrollBy repeatedly reaches last issue", () => {
+      // Scroll down aggressively — should eventually show NOR-020
+      for (let i = 0; i < 30; i++) {
+        pane.scrollBy(3);
+        pane.render(40);
+      }
+      const lines = pane.render(40);
+      const joined = lines.join("\n");
+      expect(joined).toContain("NOR-020");
+    });
+
+    it("scrollBy clamps at max offset", () => {
+      // Scroll way past the end
+      for (let i = 0; i < 50; i++) {
+        pane.scrollBy(5);
+        pane.render(40);
+      }
+      const lines = pane.render(40);
+      const joined = lines.join("\n");
+      // Should show last issue visible
+      expect(joined).toContain("NOR-020");
+      // Repeated scrollBy beyond max shouldn't crash or change output
+      pane.scrollBy(100);
+      const lines2 = pane.render(40);
+      expect(lines2.join("\n")).toContain("NOR-020");
+    });
+
+    it("keyboard j/k works after mouse scroll", () => {
+      // Scroll down via mouse
+      pane.scrollBy(10);
+      pane.render(40);
+
+      // Now use keyboard to navigate — cursor should move sequentially
+      const before = pane.getSelectedIssue();
+      pane.handleInput("j");
+      const after = pane.getSelectedIssue();
+      expect(after).not.toBeNull();
+      // Cursor should have moved to a different issue
+      expect(after!.id).not.toBe(before!.id);
+    });
+
+    it("last issue fully visible at viewport bottom", () => {
+      // Navigate cursor all the way to the last issue
+      for (let i = 0; i < ISSUE_COUNT - 1; i++) {
+        pane.handleInput("j");
+      }
+      expect(pane.getSelectedIssue()!.id).toBe("NOR-020");
+
+      const lines = pane.render(40);
+      const joined = lines.join("\n");
+      // NOR-020 must be visible in the viewport
+      expect(joined).toContain("NOR-020");
+    });
+  });
+
   describe("refresh clamps cursor", () => {
     it("clamps cursor when issues are removed", () => {
       // Start with 3 issues, cursor on third
