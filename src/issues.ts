@@ -23,6 +23,10 @@ export interface Issue {
   blocked_by?: string[];
   labels?: string[];
   docs?: string[];
+  assignee?: string;
+  started_at?: string;
+  worktree?: string;
+  tmux_session?: string;
 }
 
 type ChangeCallback = () => void;

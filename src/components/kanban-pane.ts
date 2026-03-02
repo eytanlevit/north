@@ -226,9 +226,10 @@ function renderIssueRow(issue: Issue, width: number, selected: boolean): string 
   const priorityChar = issue.priority[0].toUpperCase();
   const colorFn = PRIORITY_COLOR[issue.priority] ?? chalk.dim;
   const blocked = issue.blocked_by?.length ? chalk.red(" \u2298") : "";
+  const assigneeTag = issue.assignee ? " " + chalk.dim(`[${issue.assignee}]`) : "";
   const cat = getCategory(issue.labels);
   const categoryTag = cat ? " " + CATEGORY_COLOR[cat](` ${cat} `) : "";
-  const suffix = blocked + categoryTag;
+  const suffix = blocked + assigneeTag + categoryTag;
   const suffixVw = visibleWidth(suffix);
   const indicator = selected ? chalk.cyan("▸ ") : "  ";
   const prefix = ` ${indicator}${colorFn(`[${priorityChar}]`)} ${chalk.dim(issue.id)} `;

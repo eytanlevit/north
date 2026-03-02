@@ -1,6 +1,7 @@
 import type { Component } from "@mariozechner/pi-tui";
 import { visibleWidth, truncateToWidth, matchesKey } from "@mariozechner/pi-tui";
 import chalk from "chalk";
+import { execSync } from "node:child_process";
 import type { Issue } from "../issues.js";
 import { getCategory, CATEGORY_COLOR } from "../label-category.js";
 
@@ -41,6 +42,16 @@ export class IssueDetailView implements Component {
       const pageSize = Math.max(1, (process.stdout.rows || 24) - 4);
       this.scrollOffset = Math.max(0, this.scrollOffset - pageSize);
       this.invalidate();
+      return;
+    }
+    if (matchesKey(data, "a")) {
+      if (this.issue.tmux_session) {
+        try {
+          execSync(`tmux attach -t ${this.issue.tmux_session}`, { stdio: "inherit" });
+        } catch {
+          // tmux attach may fail if session doesn't exist
+        }
+      }
       return;
     }
   }
@@ -100,7 +111,8 @@ export class IssueDetailView implements Component {
       : "";
 
     // Footer with shortcuts
-    const shortcuts = " [Esc] Close  [j/k] Scroll ";
+    const tmuxHint = this.issue.tmux_session ? "  [a] Attach tmux" : "";
+    const shortcuts = ` [Esc] Close  [j/k] Scroll${tmuxHint} `;
     const footerContent = shortcuts + scrollInfo;
     const footerPadded = padLine(chalk.dim(footerContent), innerWidth);
     lines.push(chalk.dim("│") + " " + footerPadded + " " + chalk.dim("│"));
@@ -148,6 +160,20 @@ export class IssueDetailView implements Component {
     const cat = getCategory(issue.labels);
     if (cat) {
       lines.push(chalk.dim("Type: ") + CATEGORY_COLOR[cat](` ${cat} `));
+    }
+
+    // Agent assignment info
+    if (issue.assignee) {
+      lines.push(chalk.dim("Assignee: ") + chalk.cyan(issue.assignee));
+    }
+    if (issue.started_at) {
+      lines.push(chalk.dim("Started: ") + issue.started_at);
+    }
+    if (issue.worktree) {
+      lines.push(chalk.dim("Worktree: ") + issue.worktree);
+    }
+    if (issue.tmux_session) {
+      lines.push(chalk.dim("Tmux: ") + issue.tmux_session + chalk.dim(" (press 'a' to attach)"));
     }
     lines.push("");
 

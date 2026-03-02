@@ -3,12 +3,15 @@ import fs from "node:fs";
 import { ProcessTerminal, TUI, matchesKey, isKeyRelease } from "@mariozechner/pi-tui";
 import type { OverlayHandle } from "@mariozechner/pi-tui";
 import { stripFrontmatter } from "@mariozechner/pi-coding-agent";
+import type { ImageContent } from "@mariozechner/pi-ai";
+import { hasImage, getImageBase64 } from "@mariozechner/clipboard";
 import { ChatPane } from "./components/chat-pane.js";
 import { KanbanPane } from "./components/kanban-pane.js";
 import { HorizontalSplit } from "./components/horizontal-split.js";
 import { IssueDetailView } from "./components/issue-detail.js";
 import { ProjectDetailView } from "./components/project-detail.js";
 import { QuestionnaireOverlay } from "./components/questionnaire-overlay.js";
+import { ConfirmationDialog } from "./components/confirmation-dialog.js";
 import type { Question, QuestionnaireResult } from "./tools/ask-questions.js";
 import { createPMSession } from "./agent.js";
 import { onIssueChange, watchIssueDir } from "./issues.js";
@@ -74,8 +77,34 @@ function showQuestionnaire(questions: Question[], signal?: AbortSignal): Promise
   });
 }
 
+// Confirmation dialog overlay callback for the delete_issue tool
+let confirmationOverlay: OverlayHandle | null = null;
+let confirmationView: ConfirmationDialog | null = null;
+
+function showConfirmation(message: string): Promise<boolean> {
+  const dialog = new ConfirmationDialog(message);
+  confirmationView = dialog;
+  confirmationOverlay = tui.showOverlay(dialog, {
+    width: 50,
+    maxHeight: 12,
+    anchor: "center",
+  });
+  tui.requestRender();
+
+  return dialog.promise.then((result) => {
+    if (confirmationOverlay) {
+      confirmationOverlay.hide();
+      confirmationOverlay = null;
+    }
+    confirmationView = null;
+    tui.setFocus(chatPane.editor);
+    tui.requestRender();
+    return result;
+  });
+}
+
 // Create session (resumes previous if available)
-const { session, resumed } = await createPMSession(cwd, showQuestionnaire);
+const { session, resumed } = await createPMSession(cwd, showQuestionnaire, showConfirmation);
 
 // Resolve & cache skill aliases
 const aliases: SkillAliasConfig[] = [];
@@ -185,9 +214,17 @@ chatPane.onSubmit = (text: string) => {
     return;
   }
 
-  chatPane.addUserMessage(text); // show original to user
+  chatPane.addUserMessage(text); // show original to user (displays pending image count)
+  const pendingImages = chatPane.getPendingImages(); // drain after display
+  chatPane.startActivity();
   const promptText = result.type === "expanded" ? result.prompt : text;
-  session.prompt(promptText).catch((err: Error) => {
+  const images: ImageContent[] = pendingImages.map((img) => ({
+    type: "image" as const,
+    data: img.data,
+    mimeType: img.mimeType,
+  }));
+  session.prompt(promptText, { images: images.length > 0 ? images : undefined }).catch((err: Error) => {
+    chatPane.stopActivity();
     chatPane.addAssistantMessage(`**Error:** ${err.message}`);
   });
 };
@@ -199,6 +236,7 @@ session.subscribe((event) => {
   switch (event.type) {
     case "message_update": {
       if (event.assistantMessageEvent.type === "text_delta") {
+        chatPane.stopActivity();
         streamingText += event.assistantMessageEvent.delta;
         chatPane.setStreamingText(streamingText);
       }
@@ -212,6 +250,7 @@ session.subscribe((event) => {
       break;
     }
     case "tool_execution_start": {
+      chatPane.addActivityTool(event.toolName);
       chatPane.setToolStatus(event.toolName);
       break;
     }
@@ -220,6 +259,7 @@ session.subscribe((event) => {
       break;
     }
     case "agent_end": {
+      chatPane.stopActivity();
       chatPane.setToolStatus(null);
       streamingText = "";
       break;
@@ -285,6 +325,24 @@ tui.addInputListener((data: string) => {
 
   // Filter out key release events (Kitty protocol sends both press + release)
   if (isKeyRelease(data)) return { consume: true };
+
+  // Ctrl+V → paste image from clipboard
+  if (matchesKey(data, "ctrl+v") && chatPane.focused) {
+    if (hasImage()) {
+      getImageBase64().then((base64Data) => {
+        chatPane.addPendingImage(base64Data, "image/png");
+        tui.requestRender();
+      });
+    }
+    return { consume: true };
+  }
+
+  // Route input to confirmation dialog when it's open
+  if (confirmationView) {
+    confirmationView.handleInput(data);
+    tui.requestRender();
+    return { consume: true };
+  }
 
   // Route input to questionnaire overlay when it's open
   if (questionnaireView) {

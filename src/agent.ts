@@ -16,9 +16,12 @@ import { createAskQuestionsTool } from "./tools/ask-questions.js";
 import type { ShowQuestionnaireFn } from "./tools/ask-questions.js";
 import { createAddCommentTool } from "./tools/add-comment.js";
 import { createDeleteIssueTool } from "./tools/delete-issue.js";
+import type { ShowConfirmationFn } from "./tools/delete-issue.js";
 import { createShowProjectTool } from "./tools/show-project.js";
 import { createUpdateProjectTool } from "./tools/update-project.js";
 import { createSafeBashTool } from "./tools/bash-wrapper.js";
+import { createAcquireIssueTool } from "./tools/acquire-issue.js";
+import { createCompleteIssueTool } from "./tools/complete-issue.js";
 import { loadConfig } from "./config.js";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
@@ -31,6 +34,7 @@ export interface PMSessionResult {
 export async function createPMSession(
   cwd: string,
   showQuestionnaire?: ShowQuestionnaireFn,
+  showConfirmation?: ShowConfirmationFn,
 ): Promise<PMSessionResult> {
   const config = loadConfig(cwd);
   const model = getModel("anthropic", "claude-opus-4-6-20260201");
@@ -46,6 +50,8 @@ export async function createPMSession(
 - Show and update project notes (.pm/project.md)
 - Ask clarifying questions before creating issues when requirements are vague
 - Explore the codebase to create technically-informed issues (use read, grep, find tools)
+- Claim issues with acquire_issue before working on them
+- Mark issues done with complete_issue when finished (must provide a summary)
 
 ## Project structure
 - .pm/config.yaml — project configuration (name, prefix, statuses, priorities)
@@ -73,10 +79,12 @@ export async function createPMSession(
     createUpdateIssueTool(cwd, config),
     createShowIssueTool(cwd),
     createAddCommentTool(cwd),
-    createDeleteIssueTool(cwd),
+    createDeleteIssueTool(cwd, showConfirmation),
     createShowProjectTool(cwd),
     createUpdateProjectTool(cwd),
     createAskQuestionsTool(showQuestionnaire),
+    createAcquireIssueTool(cwd),
+    createCompleteIssueTool(cwd),
   ];
 
   const safeBash = createSafeBashTool(cwd);
